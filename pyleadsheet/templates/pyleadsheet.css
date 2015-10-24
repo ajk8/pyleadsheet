@@ -56,7 +56,8 @@ body {
 
 .progression_name {
     float: left;
-    padding-top: 0.4em;
+    padding-left: 0.2em;
+    padding-top: 0.6em;
     padding-right: 0.5em;
 }
 
@@ -66,26 +67,46 @@ body {
 
 .progression_measure_delimiter {
     display: inline-block;
-    font-size: 1.5em;
+    height: 0.9em;
+    width: 0.5em;
+    font-size: 2.5em;
+    text-align: center;
+}
+
+.progression_measure_content {
+    display: inline-block;
+    position: relative;
+    top: -0.4em;
+    height: 0.9em;
 }
 
 .progression_measure_subdivision {
     display: inline-block;
+    height: 0.9em;
     width: 1em;
+}
+
+.form_section {
+    width: 54em;
+    padding-top: 0.6em;
 }
 
 .form_section_progression {
     float: left;
+    padding-left: 0.2em;
+    padding-right: 0.5em;
 }
 
-.form_section_attributes {
-    float: left;
+.form_section_reps {
+    display: inline-block;
+    width: 3em;
 }
 
 .form_section_lyrics_hint {
     clear: both;
     font-style: italic;
     font-size: 0.8em;
+    padding-left: 0.2em;
 }
 
 #lyrics_content {

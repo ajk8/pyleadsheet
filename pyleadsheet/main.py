@@ -21,6 +21,7 @@ import os
 import sys
 import docopt
 import shutil
+from pprint import pformat
 from .parser import parse_file
 from .renderer import HTMLRenderer, HTMLToPDFConverter
 import logging
@@ -62,10 +63,11 @@ def generate(args):
         lyrics_only=lyrics_only
     )
     for yamlfile in inputfiles:
-        renderer.load_song(parse_file(yamlfile))
+        song_data = parse_file(yamlfile)
+        renderer.load_song(song_data)
     renderer.render_book()
 
-    if args['--format'].lower() == 'pdf':
+    if args['--format'] and args['--format'].lower() == 'pdf':
         converter = HTMLToPDFConverter(outputdir)
         converter.convert_songs()
 

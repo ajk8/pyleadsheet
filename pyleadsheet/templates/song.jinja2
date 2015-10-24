@@ -17,20 +17,18 @@
                     <div class="progression_container row {{ loop.cycle('odd', 'even') }}">
                         <div class="progression_name fixed_width">{{ progression.name }}</div>
                         <div class="progression_content">
-                            {% for measure in progression.measures %}
-                                {% if loop.index % 4 == 1 %}
-                                    <div class="progression_row">
-                                        <span class="progression_measure_delimiter">|</span>
-                                {% endif %}
-                                <span class="progression_measure_content">
-                                    {% for subdivision in measure %}
-                                        <span class="progression_measure_subdivision">{{ subdivision }}</span>
+                            {% for row in progression.rows %}
+                                <div class="progression_row">
+                                    <span class="progression_measure_delimiter">{{ row.bars[0] }}</span>
+                                    {% for measure in row.measures %}
+                                        <span class="progression_measure_content">
+                                            {% for subdivision in measure %}
+                                                <span class="progression_measure_subdivision">{{ subdivision }}</span>
+                                            {% endfor %}
+                                        </span>
+                                        <span class="progression_measure_delimiter">{{ row.bars[loop.index] }}</span>
                                     {% endfor %}
-                                </span>
-                                <span class="progression_measure_delimiter">|</span>
-                                {% if loop.index % 4 == 0 or loop.last %}
-                                    </div>
-                                {% endif %}
+                                </div>
                             {% endfor %}
                         </div>
                     </div>
@@ -45,7 +43,7 @@
                     <div class="form_section row {{ loop.cycle('odd', 'even') }}">
                         <div class="form_section_progression fixed_width">{{ section.progression }}</div>
                         <span class="form_section_reps">{% if section.reps %}{{ section.reps }}x{% endif %}</span>
-                        <span class="form_section_comment">{% if section.comment %}-- {{ section.comment }}{% endif %}</span>
+                        <span class="form_section_comment">{% if section.comment %}{{ section.comment }}{% endif %}</span>
                         <div class="form_section_lyrics_hint">{{ section.lyrics_hint }}</div>
                     </div>
                 {% endfor %}

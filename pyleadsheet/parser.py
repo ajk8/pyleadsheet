@@ -1,55 +1,46 @@
 import os
 import yaml
 import funcy
-from .constants import MEASURE, BEAT, HALFBEAT
-
-# def _parse_tag(pls_line, close_char, cursor):
-#     last_col = pls_line[cursor[1]:].find(close_char)
-#     if last_col == -1:
-#         raise ValueError('expected "{0}", found {1} ({2},{3})'.format(
-#             close_char, pls_line[-1], cursor[0], len(pls_line))
-#         )
-#     return pls_line[cursor[1] + 1:last_col].split(':'), last_col
+from .constants import DURATION_UNIT_MEASURE, DURATION_UNIT_BEAT, DURATION_UNIT_HALFBEAT
+from .constants import BAR_REPEAT_OPEN, BAR_REPEAT_CLOSE
 
 
-# def parse(pls_string):
-#     pls_data = {
-#         'sections': {},
-#         'form'
-#     }
-#     pls_raw = pls_string.splitlines()
-#     current_section = ''
-#     for row in range(len(pls_raw)):
-#         pls_line = pls_raw[row]
-#         for col in range(len(pls_line)):
-#             cursor = (row, col)
-#             pls_char = pls_raw[row][col]
-#             # print ','.join((str(row), str(col))), pls_char
-#             # start of a directive
-#             if pls_char == '{':
-#                 directive, col = _parse_tag(pls_line, '}', cursor)
-#                 if directive[0] == 'section':
-#                     current_section = directive[1]
-#             # start of a chord
-#             elif pls_char == '[':
-#                 chord, col = _parse_tag(pls_line, ']', cursor)
-
-#             # start of a form section
-#             elif pls_char == '<':
-#                 section, col = _parse_tag(pls_line, '>', cursor)
+def _parse_chord(progression_str, start_i):
+    end_i = start_i + progression_str[start_i:].find(']')
+    if end_i == -1:
+        raise ValueError('reached end of string looking for "]"')
+    tokens = progression_str[start_i:end_i].split(':')
+    chord_def = {'chord': tokens[0], 'duration': []}
+    if len(tokens) == 1:
+        chord_def['duration'].append({'number': 1, 'unit': DURATION_UNIT_MEASURE})
+    else:
+        for number, unit in funcy.re_all(r'([\d\.]+)([{0}{1}{2}])'.format(
+            DURATION_UNIT_MEASURE, DURATION_UNIT_BEAT, DURATION_UNIT_HALFBEAT
+        ), tokens[1]):
+            chord_def['duration'].append({'number': int(number), 'unit': unit})
+    return chord_def, end_i
 
 
 def _parse_progression(progression_str):
-    items = funcy.re_all(r'\[([^\]]+)\]', progression_str)
     ret = []
-    for item in items:
-        tokens = item.split(':')
-        ret.append({'chord': tokens[0], 'duration': []})
-        if len(tokens) == 1:
-            ret[-1]['duration'].append({'number': 1, 'unit': MEASURE})
-        else:
-            for number, unit in funcy.re_all(r'([\d\.]+)([{0}{1}{2}])'.format(MEASURE, BEAT, HALFBEAT), tokens[1]):
-                ret[-1]['duration'].append({'number': int(number), 'unit': unit})
+    repeat_open = False
+    for i in range(len(progression_str)):
+        progression_char = progression_str[i]
+        if progression_char == '{':
+            if repeat_open:
+                raise ValueError('found "{" in open repeating section')
+            repeat_open = True
+            ret.append({'bar': BAR_REPEAT_OPEN})
+        elif progression_char == '}':
+            if not repeat_open:
+                raise ValueError('found "}" outside of repeating section')
+            repeat_open = False
+            ret.append({'bar': BAR_REPEAT_CLOSE})
+        elif progression_char == '[':
+            chord_def, i = _parse_chord(progression_str, i+1)
+            ret.append(chord_def)
+    if repeat_open:
+        raise ValueError('reached end of string looking for "}"')
     return ret
 
 

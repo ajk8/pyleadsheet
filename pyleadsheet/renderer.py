@@ -5,7 +5,8 @@ import filecmp
 import datetime
 import json
 from wkhtmltopdfwrapper import wkhtmltopdf
-from .constants import MEASURE, BEAT, HALFBEAT
+from .constants import DURATION_UNIT_MEASURE, DURATION_UNIT_BEAT, DURATION_UNIT_HALFBEAT
+from .constants import BAR_SINGLE, BAR_REPEAT_OPEN, BAR_REPEAT_CLOSE
 from .constants import FILENAME_SUFFIX_COMBINED, FILENAME_SUFFIX_NO_LYRICS, FILENAME_SUFFIX_LYRICS_ONLY
 
 import logging
@@ -42,24 +43,43 @@ class HTMLRenderer(object):
             logger.info('copying base files into outputdir')
             shutil.copy(fromfile, tofile)
 
-    def _convert_measures(self, progression_data):
+    def _convert_progression_data(self, progression_data):
         # for now, all measures are divided into 8 discrete buckets
-        multipliers = {MEASURE: 8, BEAT: 2, HALFBEAT: 1}
+        multipliers = {DURATION_UNIT_MEASURE: 8, DURATION_UNIT_BEAT: 2, DURATION_UNIT_HALFBEAT: 1}
         measures = []
+        bars = []
         cur = 0
         for datum in progression_data:
-            subdivisions = 0
-            for duration_part in datum['duration']:
-                subdivisions += duration_part['number'] * multipliers[duration_part['unit']]
-            for i in range(subdivisions):
-                if cur % 8 == 0:
-                    measures.append([datum['chord']])
-                elif i == 0:
-                    measures[-1].append(datum['chord'])
-                else:
-                    measures[-1].append('')
-                cur += 1
-        return measures
+            if 'bar' in datum.keys():
+                bars.append(datum['bar'])
+            elif 'chord' in datum.keys():
+                subdivisions = 0
+                for duration_part in datum['duration']:
+                    subdivisions += duration_part['number'] * multipliers[duration_part['unit']]
+                for i in range(subdivisions):
+                    if cur % 8 == 0:
+                        measures.append([datum['chord']])
+                        if len(bars) < len(measures):
+                            bars.append(BAR_SINGLE)
+                    elif i == 0:
+                        measures[-1].append(datum['chord'])
+                    else:
+                        measures[-1].append('')
+                    cur += 1
+        if len(measures) == len(bars):
+            bars.append(BAR_SINGLE)
+
+        # for now, all rows are divided into 4 measures
+        rows = []
+        lastbreak = 0
+        for i in range(len(measures)):
+            if i == 0 or i - lastbreak == 4 or bars[i] == BAR_REPEAT_CLOSE:
+                rows.append({'bars': [], 'measures': []})
+                rows[-1]['bars'].append(BAR_SINGLE if bars[i] == BAR_REPEAT_CLOSE else bars[i])
+                lastbreak = i
+            rows[-1]['measures'].append(measures[i])
+            rows[-1]['bars'].append(BAR_SINGLE if bars[i+1 == BAR_REPEAT_OPEN else bars[i+1]])
+        return rows
 
     def _prepare_form_section_lyrics(self, form_section):
         if 'lyrics' not in form_section.keys():
@@ -74,7 +94,7 @@ class HTMLRenderer(object):
             progression_name = song_data['progressions'][i].keys()[0]
             song_data['progressions'][i] = {
                 'name': progression_name,
-                'measures': self._convert_measures(song_data['progressions'][i][progression_name])
+                'rows': self._convert_progression_data(song_data['progressions'][i][progression_name])
             }
         for form_section in song_data['form']:
             self._prepare_form_section_lyrics(form_section)
