@@ -78,7 +78,7 @@ class HTMLRenderer(object):
                 rows[-1]['bars'].append(BAR_SINGLE if bars[i] == BAR_REPEAT_CLOSE else bars[i])
                 lastbreak = i
             rows[-1]['measures'].append(measures[i])
-            rows[-1]['bars'].append(BAR_SINGLE if bars[i+1 == BAR_REPEAT_OPEN else bars[i+1]])
+            rows[-1]['bars'].append(BAR_SINGLE if bars[i+1] == BAR_REPEAT_OPEN else bars[i+1])
         return rows
 
     def _prepare_form_section_lyrics(self, form_section):
