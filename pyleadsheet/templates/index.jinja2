@@ -9,10 +9,10 @@
     </div>
 
     <div id="toc_container" class="content_container">
-        {% for letter, songs in songs_by_first_letter.items() %}
+        {% for letter in sorted_letters %}
             <div class="toc_letter">{{ letter }}</div>
             <table class="index_table">
-                {% for song in songs %}
+                {% for song in songs_by_first_letter[letter] %}
                     <tr class="{{ loop.cycle('odd', 'even') }}">
                         <td class="index_song_title">{{ song.title }}</td>
                         {% for mode in mode_keys %}

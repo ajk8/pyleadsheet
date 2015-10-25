@@ -7,6 +7,7 @@ import json
 from wkhtmltopdfwrapper import wkhtmltopdf
 from .constants import DURATION_UNIT_MEASURE, DURATION_UNIT_BEAT, DURATION_UNIT_HALFBEAT
 from .constants import BAR_SINGLE, BAR_REPEAT_OPEN, BAR_REPEAT_CLOSE
+from .constants import ARG_ROW_BREAK
 from .constants import FILENAME_SUFFIX_COMBINED, FILENAME_SUFFIX_NO_LYRICS, FILENAME_SUFFIX_LYRICS_ONLY
 
 import logging
@@ -19,6 +20,7 @@ class HTMLRenderer(object):
     INDEX_TEMPLATE = 'index.jinja2'
     OUTPUT_SUBDIR = 'html'
     INDEX_JSON_FILE = '.index.json'
+    DURATION_UNIT_MULTIPLIERS = {DURATION_UNIT_MEASURE: 8, DURATION_UNIT_BEAT: 2, DURATION_UNIT_HALFBEAT: 1}
 
     MODES = {
         'no_lyrics': {'filename_suffix': FILENAME_SUFFIX_NO_LYRICS, 'display_name': 'Lead Sheet', 'display_order': 1},
@@ -44,18 +46,23 @@ class HTMLRenderer(object):
             shutil.copy(fromfile, tofile)
 
     def _convert_progression_data(self, progression_data):
-        # for now, all measures are divided into 8 discrete buckets
-        multipliers = {DURATION_UNIT_MEASURE: 8, DURATION_UNIT_BEAT: 2, DURATION_UNIT_HALFBEAT: 1}
-        measures = []
         bars = []
+        measures = []
         cur = 0
         for datum in progression_data:
-            if 'bar' in datum.keys():
-                bars.append(datum['bar'])
+            if 'arg' in datum.keys():
+                pass
+            elif 'group' in datum.keys():
+                group_bars, group_measures = self._convert_progression_data(datum['progression'])
+                if datum['group'] == 'repeat':
+                    group_bars[0] = BAR_REPEAT_OPEN
+                group_bars[-1] = BAR_REPEAT_CLOSE
+                bars += group_bars
+                measures += group_measures
             elif 'chord' in datum.keys():
                 subdivisions = 0
                 for duration_part in datum['duration']:
-                    subdivisions += duration_part['number'] * multipliers[duration_part['unit']]
+                    subdivisions += duration_part['number'] * self.DURATION_UNIT_MULTIPLIERS[duration_part['unit']]
                 for i in range(subdivisions):
                     if cur % 8 == 0:
                         measures.append([datum['chord']])
@@ -68,6 +75,10 @@ class HTMLRenderer(object):
                     cur += 1
         if len(measures) == len(bars):
             bars.append(BAR_SINGLE)
+        return bars, measures
+
+    def _make_rows(self, progression_data):
+        bars, measures = self._convert_progression_data(progression_data)
 
         # for now, all rows are divided into 4 measures
         rows = []
@@ -79,6 +90,8 @@ class HTMLRenderer(object):
                 lastbreak = i
             rows[-1]['measures'].append(measures[i])
             rows[-1]['bars'].append(BAR_SINGLE if bars[i+1] == BAR_REPEAT_OPEN else bars[i+1])
+        from pprint import pformat
+        print pformat(rows)
         return rows
 
     def _prepare_form_section_lyrics(self, form_section):
@@ -94,7 +107,7 @@ class HTMLRenderer(object):
             progression_name = song_data['progressions'][i].keys()[0]
             song_data['progressions'][i] = {
                 'name': progression_name,
-                'rows': self._convert_progression_data(song_data['progressions'][i][progression_name])
+                'rows': self._make_rows(song_data['progressions'][i][progression_name])
             }
         for form_section in song_data['form']:
             self._prepare_form_section_lyrics(form_section)
@@ -158,7 +171,7 @@ class HTMLRenderer(object):
         self._render_template_to_file(
             self.INDEX_TEMPLATE,
             'index.html',
-            {'songs_by_first_letter': songs_by_first_letter}
+            {'songs_by_first_letter': songs_by_first_letter, 'sorted_letters': sorted(songs_by_first_letter.keys())}
         )
         json.dump(songs_by_first_letter, open(os.path.join(self.outputdir, self.INDEX_JSON_FILE), 'w'))
 
