@@ -6,7 +6,7 @@ import datetime
 import json
 from wkhtmltopdfwrapper import wkhtmltopdf
 from .constants import DURATION_UNIT_MEASURE, DURATION_UNIT_BEAT, DURATION_UNIT_HALFBEAT
-from .constants import BAR_SINGLE, BAR_REPEAT_OPEN, BAR_REPEAT_CLOSE, BAR_DOUBLE
+from .constants import BAR_SINGLE, BAR_DOUBLE, BAR_SECTION_OPEN, BAR_SECTION_CLOSE, BAR_REPEAT_OPEN, BAR_REPEAT_CLOSE
 from .constants import ARG_ROW_BREAK
 from .constants import FILENAME_SUFFIX_COMBINED, FILENAME_SUFFIX_NO_LYRICS, FILENAME_SUFFIX_LYRICS_ONLY
 
@@ -57,10 +57,13 @@ class HTMLRenderer(object):
                 group_measures = self._convert_progression_data(datum['progression'])
                 if datum['group'] == 'repeat':
                     group_measures[0]['start_bar'] = BAR_REPEAT_OPEN
+                    group_measures[-1]['end_bar'] = BAR_REPEAT_CLOSE
                 else:
                     group_measures[0]['start_bar'] = BAR_DOUBLE
                 if datum['name']:
-                    group_measures[0]['note'] = datum['name']
+                    for measure in group_measures:
+                        measure['note'] = datum['name']
+                    # group_measures[0]['note'] = datum['name']
                 measures += group_measures
             elif 'chord' in datum.keys():
                 subdivisions = 0
@@ -70,7 +73,7 @@ class HTMLRenderer(object):
                     if cur % 8 == 0:
                         measures.append({
                             'args': [],
-                            'start_bar': BAR_REPEAT_OPEN if len(measures) == 0 else BAR_SINGLE,
+                            'start_bar': BAR_SINGLE,
                             'end_bar': BAR_SINGLE,
                             'subdivisions': [datum['chord']]
                         })
@@ -79,7 +82,10 @@ class HTMLRenderer(object):
                     else:
                         measures[-1]['subdivisions'].append('')
                     cur += 1
-        measures[-1]['end_bar'] = BAR_REPEAT_CLOSE
+        if measures[0]['start_bar'] < BAR_SECTION_OPEN:
+            measures[0]['start_bar'] = BAR_SECTION_OPEN
+        if measures[-1]['end_bar'] < BAR_SECTION_CLOSE:
+            measures[-1]['end_bar'] = BAR_SECTION_CLOSE
         return measures
 
     def _make_rows(self, progression_data):

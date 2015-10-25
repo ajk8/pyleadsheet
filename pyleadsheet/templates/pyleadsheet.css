@@ -94,6 +94,19 @@ body {
     display: inline-block;
     height: 0.9em;
     width: 1em;
+    word-wrap: nowrap;
+}
+
+.progression_chord_root {
+    float: left;
+}
+
+.progress_chord_spec {
+    float: left;
+}
+
+.progression_chort_base {
+    float: left;
 }
 
 .form_section {

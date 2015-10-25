@@ -26,7 +26,16 @@ def _find_i(progression_substr, close_char):
 def _parse_chord(progression_substr):
     end_i = _find_i(progression_substr, CHORD_CLOSE)
     tokens = progression_substr[:end_i].split(CHORD_DURATION_SEPARATOR)
-    chord_def = {'chord': tokens[0], 'duration': []}
+    if tokens[0] == 'rest':
+        chord_parts = ('rest', '', '')
+    else:
+        chord_parts = funcy.re_find(r'([A-Gb#]{1,2})([^/]*)(/[A-Gb#]{0,2})', tokens[0])
+        if chord_parts[2]:
+            print chord_parts
+    chord_def = {
+        'chord': {'root': chord_parts[0], 'spec': chord_parts[1], 'base': chord_parts[2]},
+        'duration': []
+    }
     if len(tokens) == 1:
         chord_def['duration'].append({'number': 1, 'unit': DURATION_UNIT_MEASURE})
     else:

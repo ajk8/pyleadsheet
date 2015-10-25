@@ -26,7 +26,14 @@
                                         </span>
                                         <span class="progression_measure_content">
                                             {% for subdivision in measure.subdivisions %}
-                                                <span class="progression_measure_subdivision">{{ subdivision }}</span>
+                                                <span class="progression_measure_subdivision">
+                                                    {{ subdivision.root }}<sup>{{ subdivision.spec }}</sup>
+                                                    {% if subdivision.base %}/<sub>{{ subdivision.base }}</sub>{% endif %}
+                                                {#
+                                                    <span class="progression_chord_root">{{ subdivision.root }}</span>
+                                                    <span class="progression_chord_spec">{{ subdivision.spec }}</span>
+                                                    <span class="progression_chord_base">{{ subdivision.base }}</span> #}
+                                                </span>
                                             {% endfor %}
                                         </span>
                                     {% endfor %}
