@@ -6,7 +6,7 @@ import datetime
 import json
 from wkhtmltopdfwrapper import wkhtmltopdf
 from .constants import DURATION_UNIT_MEASURE, DURATION_UNIT_BEAT, DURATION_UNIT_HALFBEAT
-from .constants import BAR_SINGLE, BAR_REPEAT_OPEN, BAR_REPEAT_CLOSE
+from .constants import BAR_SINGLE, BAR_REPEAT_OPEN, BAR_REPEAT_CLOSE, BAR_DOUBLE
 from .constants import ARG_ROW_BREAK
 from .constants import FILENAME_SUFFIX_COMBINED, FILENAME_SUFFIX_NO_LYRICS, FILENAME_SUFFIX_LYRICS_ONLY
 
@@ -20,6 +20,7 @@ class HTMLRenderer(object):
     INDEX_TEMPLATE = 'index.jinja2'
     OUTPUT_SUBDIR = 'html'
     INDEX_JSON_FILE = '.index.json'
+    MAX_MEASURES_PER_ROW = 4
     DURATION_UNIT_MULTIPLIERS = {DURATION_UNIT_MEASURE: 8, DURATION_UNIT_BEAT: 2, DURATION_UNIT_HALFBEAT: 1}
 
     MODES = {
@@ -46,18 +47,20 @@ class HTMLRenderer(object):
             shutil.copy(fromfile, tofile)
 
     def _convert_progression_data(self, progression_data):
-        bars = []
         measures = []
         cur = 0
         for datum in progression_data:
             if 'arg' in datum.keys():
-                pass
+                if datum['arg'] == ARG_ROW_BREAK:
+                    measures[-1]['args'].append(ARG_ROW_BREAK)
             elif 'group' in datum.keys():
-                group_bars, group_measures = self._convert_progression_data(datum['progression'])
+                group_measures = self._convert_progression_data(datum['progression'])
                 if datum['group'] == 'repeat':
-                    group_bars[0] = BAR_REPEAT_OPEN
-                group_bars[-1] = BAR_REPEAT_CLOSE
-                bars += group_bars
+                    group_measures[0]['start_bar'] = BAR_REPEAT_OPEN
+                else:
+                    group_measures[0]['start_bar'] = BAR_DOUBLE
+                if datum['name']:
+                    group_measures[0]['note'] = datum['name']
                 measures += group_measures
             elif 'chord' in datum.keys():
                 subdivisions = 0
@@ -65,33 +68,34 @@ class HTMLRenderer(object):
                     subdivisions += duration_part['number'] * self.DURATION_UNIT_MULTIPLIERS[duration_part['unit']]
                 for i in range(subdivisions):
                     if cur % 8 == 0:
-                        measures.append([datum['chord']])
-                        if len(bars) < len(measures):
-                            bars.append(BAR_SINGLE)
+                        measures.append({
+                            'args': [],
+                            'start_bar': BAR_REPEAT_OPEN if len(measures) == 0 else BAR_SINGLE,
+                            'end_bar': BAR_SINGLE,
+                            'subdivisions': [datum['chord']]
+                        })
                     elif i == 0:
-                        measures[-1].append(datum['chord'])
+                        measures[-1]['subdivisions'].append(datum['chord'])
                     else:
-                        measures[-1].append('')
+                        measures[-1]['subdivisions'].append('')
                     cur += 1
-        if len(measures) == len(bars):
-            bars.append(BAR_SINGLE)
-        return bars, measures
+        measures[-1]['end_bar'] = BAR_REPEAT_CLOSE
+        return measures
 
     def _make_rows(self, progression_data):
-        bars, measures = self._convert_progression_data(progression_data)
-
-        # for now, all rows are divided into 4 measures
+        measures = self._convert_progression_data(progression_data)
         rows = []
         lastbreak = 0
         for i in range(len(measures)):
-            if i == 0 or i - lastbreak == 4 or bars[i] == BAR_REPEAT_CLOSE:
-                rows.append({'bars': [], 'measures': []})
-                rows[-1]['bars'].append(BAR_SINGLE if bars[i] == BAR_REPEAT_CLOSE else bars[i])
+            if (
+                i == 0 or
+                i - lastbreak == self.MAX_MEASURES_PER_ROW or
+                measures[i-1]['end_bar'] == BAR_REPEAT_CLOSE or
+                measures[i-1]['args'] == ARG_ROW_BREAK
+            ):
+                rows.append([])
                 lastbreak = i
-            rows[-1]['measures'].append(measures[i])
-            rows[-1]['bars'].append(BAR_SINGLE if bars[i+1] == BAR_REPEAT_OPEN else bars[i+1])
-        from pprint import pformat
-        print pformat(rows)
+            rows[-1].append(measures[i])
         return rows
 
     def _prepare_form_section_lyrics(self, form_section):

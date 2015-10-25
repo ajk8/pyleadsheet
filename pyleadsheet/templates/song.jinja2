@@ -19,15 +19,18 @@
                         <div class="progression_content">
                             {% for row in progression.rows %}
                                 <div class="progression_row">
-                                    <span class="progression_measure_delimiter">{{ row.bars[0] }}</span>
-                                    {% for measure in row.measures %}
+                                    {% for measure in row %}
+                                        <span class="progression_measure_delimiter">
+                                            {{ measure['start_bar'] }}
+                                            <div class="progression_measure_delimiter_note">{{ measure.note }}</div>
+                                        </span>
                                         <span class="progression_measure_content">
-                                            {% for subdivision in measure %}
+                                            {% for subdivision in measure.subdivisions %}
                                                 <span class="progression_measure_subdivision">{{ subdivision }}</span>
                                             {% endfor %}
                                         </span>
-                                        <span class="progression_measure_delimiter">{{ row.bars[loop.index] }}</span>
                                     {% endfor %}
+                                    <span class="progression_measure_delimiter">{{ row[-1]['end_bar'] }}</span>
                                 </div>
                             {% endfor %}
                         </div>
