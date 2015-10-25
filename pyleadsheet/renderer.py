@@ -7,7 +7,7 @@ import json
 from wkhtmltopdfwrapper import wkhtmltopdf
 from .constants import DURATION_UNIT_MEASURE, DURATION_UNIT_BEAT, DURATION_UNIT_HALFBEAT
 from .constants import BAR_SINGLE, BAR_DOUBLE, BAR_SECTION_OPEN, BAR_SECTION_CLOSE, BAR_REPEAT_OPEN, BAR_REPEAT_CLOSE
-from .constants import ARG_ROW_BREAK
+from .constants import ARG_ROW_BREAK, FLAT, SHARP
 from .constants import FILENAME_SUFFIX_COMBINED, FILENAME_SUFFIX_NO_LYRICS, FILENAME_SUFFIX_LYRICS_ONLY
 
 import logging

@@ -94,7 +94,7 @@ body {
     display: inline-block;
     height: 0.9em;
     width: 1em;
-    word-wrap: nowrap;
+    white-space: nowrap;
 }
 
 .progression_chord_root {
