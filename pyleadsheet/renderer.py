@@ -97,7 +97,7 @@ class HTMLRenderer(object):
                 i == 0 or
                 i - lastbreak == self.MAX_MEASURES_PER_ROW or
                 measures[i-1]['end_bar'] == BAR_REPEAT_CLOSE or
-                measures[i-1]['args'] == ARG_ROW_BREAK
+                ARG_ROW_BREAK in measures[i-1]['args']
             ):
                 rows.append([])
                 lastbreak = i
