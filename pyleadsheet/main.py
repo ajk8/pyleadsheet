@@ -21,7 +21,6 @@ import os
 import sys
 import docopt
 import shutil
-from pprint import pformat
 from .parser import parse_file
 from .renderer import HTMLRenderer, HTMLToPDFConverter
 import logging

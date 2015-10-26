@@ -61,9 +61,9 @@ class HTMLRenderer(object):
                 else:
                     group_measures[0]['start_bar'] = BAR_DOUBLE
                 if datum['name']:
-                    for measure in group_measures:
-                        measure['note'] = datum['name']
-                    # group_measures[0]['note'] = datum['name']
+                    # for measure in group_measures:
+                    #     measure['note'] = datum['name']
+                    group_measures[0]['note'] = datum['name']
                 measures += group_measures
             elif 'chord' in datum.keys():
                 subdivisions = 0
