@@ -4,11 +4,7 @@ import funcy
 from .constants import DURATION_UNIT_MEASURE, DURATION_UNIT_BEAT, DURATION_UNIT_HALFBEAT
 from .constants import ARG_ROW_BREAK, REST
 
-CHORD_MARKUP = {
-    'open_char': '[',
-    'close_char': ']',
-    'separator': ':'
-}
+CHORD_MARKUP = {'open_char': '[', 'close_char': ']', 'separator': ':'}
 PROGRESSION_GROUPS = {
     'repeat': {'open_char': '{', 'close_char': '}'},
     'suffix': {'open_char': '(', 'close_char': ')'}
@@ -49,7 +45,7 @@ def _parse_group(progression_substr, group_type):
     end_i = _find_i(progression_substr, close_char)
     ret = {'group': group_type}
     first_chord_open_i = _find_i(progression_substr, CHORD_MARKUP['open_char'])
-    ret['name'] = progression_substr[:first_chord_open_i] if first_chord_open_i > 0 else None
+    ret['note'] = progression_substr[:first_chord_open_i] if first_chord_open_i > 0 else None
     ret['progression'] = _parse_progression(progression_substr[first_chord_open_i:end_i])
     return ret, end_i
 

@@ -40,11 +40,17 @@ class HTMLRenderer(object):
         if not os.path.exists(self.outputdir):
             logger.debug('creating outputdir')
             os.makedirs(self.outputdir)
-        fromfile = os.path.join(os.path.dirname(__file__), 'templates', 'pyleadsheet.css')
-        tofile = os.path.join(self.outputdir, 'pyleadsheet.css')
-        if not os.path.exists(tofile) or not filecmp.cmp(fromfile, tofile):
-            logger.info('copying base files into outputdir')
-            shutil.copy(fromfile, tofile)
+        fromdir = os.path.join(os.path.dirname(__file__), 'templates')
+        logged = False
+        for filename in os.listdir(fromdir):
+            if not filename.endswith('jinja2'):
+                fromfile = os.path.join(fromdir, filename)
+                tofile = os.path.join(self.outputdir, filename)
+                if not os.path.exists(tofile) or not filecmp.cmp(fromfile, tofile):
+                    if not logged:
+                        logger.info('copying base files into outputdir')
+                        logged = True
+                    shutil.copy(fromfile, tofile)
 
     def _convert_progression_data(self, progression_data):
         measures = []
@@ -58,12 +64,10 @@ class HTMLRenderer(object):
                 if datum['group'] == 'repeat':
                     group_measures[0]['start_bar'] = BAR_REPEAT_OPEN
                     group_measures[-1]['end_bar'] = BAR_REPEAT_CLOSE
+                    group_measures[-1]['end_note'] = datum['note'] if datum['note'] else ''
                 else:
                     group_measures[0]['start_bar'] = BAR_DOUBLE
-                if datum['name']:
-                    # for measure in group_measures:
-                    #     measure['note'] = datum['name']
-                    group_measures[0]['note'] = datum['name']
+                    group_measures[0]['start_note'] = datum['note'] if datum['note'] else ''
                 measures += group_measures
             elif 'chord' in datum.keys():
                 subdivisions = 0

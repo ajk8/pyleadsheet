@@ -25,3 +25,6 @@ output/
 /*.yaml
 /*.yml
 /*.pls
+
+# osx files
+.DS_Store
