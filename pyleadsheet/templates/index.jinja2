@@ -16,9 +16,7 @@
                     <tr class="{{ loop.cycle('odd', 'even') }}">
                         <td class="index_song_title">{{ song.title }}</td>
                         {% for mode in mode_keys %}
-                            {% if mode_flags[mode] %}
-                                <td><a href="{{ song.filenames[mode] }}">{{ modes[mode]['display_name'] }}</a></td>
-                            {% endif %}
+                            <td><a href="{{ song.filenames[mode] }}">{{ modes[mode]['display_name'] }}</a></td>
                         {% endfor %}
                     </tr>
                 {% endfor %}

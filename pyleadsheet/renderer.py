@@ -24,16 +24,33 @@ class HTMLRenderer(object):
     DURATION_UNIT_MULTIPLIERS = {DURATION_UNIT_MEASURE: 8, DURATION_UNIT_BEAT: 2, DURATION_UNIT_HALFBEAT: 1}
 
     MODES = {
-        'no_lyrics': {'filename_suffix': FILENAME_SUFFIX_NO_LYRICS, 'display_name': 'Lead Sheet', 'display_order': 1},
-        'lyrics_only': {'filename_suffix': FILENAME_SUFFIX_LYRICS_ONLY, 'display_name': 'Lyrics', 'display_order': 2},
-        'combined': {'filename_suffix': FILENAME_SUFFIX_COMBINED, 'display_name': 'Combined', 'display_order': 3},
+        'no_lyrics': {
+            'filename_suffix': FILENAME_SUFFIX_NO_LYRICS,
+            'display_name': 'Lead Sheet',
+            'display_order': 1,
+            'render_leadsheet': True,
+            'render_lyrics': False
+        },
+        'lyrics_only': {
+            'filename_suffix': FILENAME_SUFFIX_LYRICS_ONLY,
+            'display_name': 'Lyrics',
+            'display_order': 2,
+            'render_leadsheet': False,
+            'render_lyrics': True
+        },
+        'combined': {
+            'filename_suffix': FILENAME_SUFFIX_COMBINED,
+            'display_name': 'Combined',
+            'display_order': 3,
+            'render_leadsheet': True,
+            'render_lyrics': True
+        }
     }
 
-    def __init__(self, outputdir, combined=False, no_lyrics=False, lyrics_only=False):
+    def __init__(self, outputdir):
         logger.debug('initializing HTMLRenderer with outputdir: ' + outputdir)
         self.songs_data = {}
         self.outputdir = os.path.join(outputdir, self.OUTPUT_SUBDIR)
-        self.mode_flags = {'combined': combined, 'no_lyrics': no_lyrics, 'lyrics_only': lyrics_only}
         self.timestamp = datetime.datetime.now()
 
     def _prepare_output_directory(self):
@@ -136,8 +153,7 @@ class HTMLRenderer(object):
         template_data.update({
             'timestamp': self.timestamp,
             'modes': self.MODES,
-            'mode_keys': sorted(self.MODES.keys(), key=lambda(k): self.MODES[k]['display_order']),
-            'mode_flags': self.mode_flags
+            'mode_keys': sorted(self.MODES.keys(), key=lambda(k): self.MODES[k]['display_order'])
         })
 
     def _render_template_to_file(self, template, outputfilename, template_data):
@@ -149,23 +165,15 @@ class HTMLRenderer(object):
 
     def render_song(self, song_title):
         logger.info('rendering song: ' + song_title)
-        if self.mode_flags['combined']:
+        for mode in self.MODES.values():
             self._render_template_to_file(
                 self.SONG_TEMPLATE,
-                self._get_output_filename(song_title, self.MODES['combined']['filename_suffix']),
-                {'song': self.songs_data[song_title], 'render_leadsheet': True, 'render_lyrics': True}
-            )
-        if self.mode_flags['no_lyrics']:
-            self._render_template_to_file(
-                self.SONG_TEMPLATE,
-                self._get_output_filename(song_title, self.MODES['no_lyrics']['filename_suffix']),
-                {'song': self.songs_data[song_title], 'render_leadsheet': True, 'render_lyrics': False}
-            )
-        if self.mode_flags['lyrics_only']:
-            self._render_template_to_file(
-                self.SONG_TEMPLATE,
-                self._get_output_filename(song_title, self.MODES['lyrics_only']['filename_suffix']),
-                {'song': self.songs_data[song_title], 'render_leadsheet': False, 'render_lyrics': True}
+                self._get_output_filename(song_title, mode['filename_suffix']),
+                {
+                    'song': self.songs_data[song_title],
+                    'render_leadsheet': mode['render_leadsheet'],
+                    'render_lyrics': mode['render_lyrics']
+                }
             )
 
     def render_index(self):
