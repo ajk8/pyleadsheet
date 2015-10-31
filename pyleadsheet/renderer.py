@@ -117,7 +117,7 @@ class HTMLRenderer(object):
             if (
                 i == 0 or
                 i - lastbreak == self.MAX_MEASURES_PER_ROW or
-                measures[i-1]['end_bar'] == BAR_REPEAT_CLOSE or
+                measures[i-1]['end_bar'] in (BAR_REPEAT_CLOSE, BAR_SECTION_CLOSE) or
                 ARG_ROW_BREAK in measures[i-1]['args']
             ):
                 rows.append([])
@@ -134,12 +134,8 @@ class HTMLRenderer(object):
             form_section['lyrics_hint'] = (lines[0] if len(lines[0]) <= 50 else lines[0][0:50]) + '...'
 
     def load_song(self, song_data):
-        for i in range(len(song_data['progressions'])):
-            progression_name = song_data['progressions'][i].keys()[0]
-            song_data['progressions'][i] = {
-                'name': progression_name,
-                'rows': self._make_rows(song_data['progressions'][i][progression_name])
-            }
+        for progression in song_data['progressions']:
+            progression['rows'] = self._make_rows(progression['chords'])
         for form_section in song_data['form']:
             self._prepare_form_section_lyrics(form_section)
         self.songs_data[song_data['title']] = song_data

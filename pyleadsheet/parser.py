@@ -74,11 +74,8 @@ def _parse_progression(progression_str):
 
 def parse(yaml_str):
     pls_data = yaml.load(yaml_str)
-    for i in range(len(pls_data['progressions'])):
-        progression_name = pls_data['progressions'][i].keys()[0]
-        pls_data['progressions'][i][progression_name] = _parse_progression(
-            pls_data['progressions'][i][progression_name]
-        )
+    for progression in pls_data['progressions']:
+        progression['chords'] = _parse_progression(progression['chords'])
     return pls_data
 
 
