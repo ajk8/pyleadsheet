@@ -24,7 +24,7 @@
                                             <img src="{{ measure.start_bar }}" />
                                             <div class="progression_measure_delimiter_start_note">{{ measure.start_note }}</div>
                                         </span>
-                                        <span class="progression_measure_content">
+                                        <span class="progression_measure_content subdivisions_{{ num_subdivisions }}">
                                             {% for subdivision in measure.subdivisions %}
                                                 <span class="progression_measure_subdivision">
                                                     {{ subdivision.root }}<sup>{{ subdivision.spec }}</sup>{% if subdivision.base %}/<sub>{{ subdivision.base }}</sub>{% endif %}

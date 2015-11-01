@@ -107,9 +107,11 @@ body {
 .progression_measure_subdivision {
     display: inline-block;
     height: 0.9em;
-    width: 1em;
     white-space: nowrap;
 }
+
+.subdivisions_6 .progression_measure_subdivision { width: 1.425em; }
+.subdivisions_8 .progression_measure_subdivision { width: 1em; }
 
 .progression_chord_root {
     float: left;

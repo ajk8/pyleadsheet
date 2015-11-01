@@ -201,6 +201,7 @@ class HTMLRenderer(object):
                 self._get_output_filename(song_title, mode['filename_suffix']),
                 {
                     'song': self.songs_data[song_title],
+                    'num_subdivisions': self.songs_data[song_title]['multipliers'][DURATION_UNIT_MEASURE],
                     'render_leadsheet': mode['render_leadsheet'],
                     'render_lyrics': mode['render_lyrics']
                 }
