@@ -69,9 +69,29 @@ class HTMLRenderer(object):
                         logged = True
                     shutil.copy(fromfile, tofile)
 
+    def _clean_last_chord(self, measures):
+        last_chord = measures[-1]['subdivisions'][-1]
+        if last_chord == '':
+            return
+        last_last_chord = ''
+        reverse_subdivision_i = -2
+        reverse_measure_i = -1
+        while last_last_chord == '':
+            try:
+                last_last_chord = measures[reverse_measure_i]['subdivisions'][reverse_subdivision_i]
+            except IndexError:
+                if reverse_subdivision_i == -1:
+                    break
+                reverse_measure_i -= 1
+                reverse_subdivision_i = -1
+            reverse_subdivision_i -= 1
+        print last_chord, last_last_chord
+        if last_chord == last_last_chord:
+            measures[-1]['subdivisions'][-1] = ''
+
     def _convert_progression_data(self, progression_data):
         measures = []
-        cur = 0
+        cursor = 0
         for datum in progression_data:
             if 'arg' in datum.keys():
                 if datum['arg'] == ARG_ROW_BREAK:
@@ -91,7 +111,7 @@ class HTMLRenderer(object):
                 for duration_part in datum['duration']:
                     subdivisions += duration_part['number'] * self.DURATION_UNIT_MULTIPLIERS[duration_part['unit']]
                 for i in range(subdivisions):
-                    if cur % 8 == 0:
+                    if cursor % 8 == 0:
                         measures.append({
                             'args': [],
                             'start_bar': BAR_SINGLE,
@@ -99,10 +119,11 @@ class HTMLRenderer(object):
                             'subdivisions': [datum['chord']]
                         })
                     elif i == 0:
+                        self._clean_last_chord(measures)
                         measures[-1]['subdivisions'].append(datum['chord'])
                     else:
                         measures[-1]['subdivisions'].append('')
-                    cur += 1
+                    cursor += 1
         if measures[0]['start_bar'] < BAR_SECTION_OPEN:
             measures[0]['start_bar'] = BAR_SECTION_OPEN
         if measures[-1]['end_bar'] < BAR_SECTION_CLOSE:
