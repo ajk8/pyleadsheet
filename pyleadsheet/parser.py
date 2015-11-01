@@ -4,6 +4,9 @@ import funcy
 from .constants import DURATION_UNIT_MEASURE, DURATION_UNIT_BEAT, DURATION_UNIT_HALFBEAT
 from .constants import ARG_ROW_BREAK, REST
 
+import logging
+logger = logging.getLogger(__name__)
+
 CHORD_MARKUP = {'open_char': '[', 'close_char': ']', 'separator': ':'}
 PROGRESSION_GROUPS = {
     'repeat': {'open_char': '{', 'close_char': '}'},
@@ -72,10 +75,22 @@ def _parse_progression(progression_str):
     return ret
 
 
+def _parse_time(time_str):
+    tokens = funcy.re_find(r'(\d+)/([48])', time_str)
+    if tokens is None:
+        raise ValueError('bad time signature, must be of the form int/int, with ' +
+                         'only 4 and 8 supported as units')
+    return {'count': int(tokens[0]), 'unit': int(tokens[1])}
+
+
 def parse(yaml_str):
     pls_data = yaml.load(yaml_str)
+    logger.debug('parsing input for song: ' + pls_data['title'])
     for progression in pls_data['progressions']:
+        logger.debug('parsing chords for progression: ' + progression['name'])
         progression['chords'] = _parse_progression(progression['chords'])
+    if pls_data['time']:
+        pls_data['time'] = _parse_time(pls_data['time'])
     return pls_data
 
 

@@ -11,6 +11,7 @@ Options:
     --output=DIR   directory to place html files in (default: output)
     --pdf          convert html files to pdf after initial rendering
     --clean        start from a fresh output diretory
+    --debug        use verbose logging
 """
 
 import os
@@ -20,7 +21,6 @@ import shutil
 from .parser import parse_file
 from .renderer import HTMLRenderer, HTMLToPDFConverter
 import logging
-logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
 
 def generate(args):
@@ -55,6 +55,7 @@ def generate(args):
 
 def main():
     args = docopt.docopt(__doc__)
+    logging.basicConfig(stream=sys.stderr, level=logging.DEBUG if args['--debug'] else logging.INFO)
 
     if args['help']:
         print(__doc__)

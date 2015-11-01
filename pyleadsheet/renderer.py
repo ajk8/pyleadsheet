@@ -69,6 +69,11 @@ class HTMLRenderer(object):
                         logged = True
                     shutil.copy(fromfile, tofile)
 
+    def _get_measure_length(self, time_data):
+        # this assumes that
+        multiplier = 1.0 / (float(time_data['unit']) / 8.0)
+        return int(time_data['count'] * multiplier)
+
     def _clean_last_chord(self, measures):
         last_chord = measures[-1]['subdivisions'][-1]
         if last_chord == '':
@@ -88,7 +93,7 @@ class HTMLRenderer(object):
         if last_chord == last_last_chord:
             measures[-1]['subdivisions'][-1] = ''
 
-    def _convert_progression_data(self, progression_data):
+    def _convert_progression_data(self, progression_data, multipliers):
         measures = []
         cursor = 0
         for datum in progression_data:
@@ -96,7 +101,7 @@ class HTMLRenderer(object):
                 if datum['arg'] == ARG_ROW_BREAK:
                     measures[-1]['args'].append(ARG_ROW_BREAK)
             elif 'group' in datum.keys():
-                group_measures = self._convert_progression_data(datum['progression'])
+                group_measures = self._convert_progression_data(datum['progression'], multipliers)
                 if datum['group'] == 'repeat':
                     group_measures[0]['start_bar'] = BAR_REPEAT_OPEN
                     group_measures[-1]['end_bar'] = BAR_REPEAT_CLOSE
@@ -108,9 +113,9 @@ class HTMLRenderer(object):
             elif 'chord' in datum.keys():
                 subdivisions = 0
                 for duration_part in datum['duration']:
-                    subdivisions += duration_part['number'] * self.DURATION_UNIT_MULTIPLIERS[duration_part['unit']]
+                    subdivisions += duration_part['number'] * multipliers[duration_part['unit']]
                 for i in range(subdivisions):
-                    if cursor % 8 == 0:
+                    if cursor % multipliers[DURATION_UNIT_MEASURE] == 0:
                         measures.append({
                             'args': [],
                             'start_bar': BAR_SINGLE,
@@ -129,8 +134,8 @@ class HTMLRenderer(object):
             measures[-1]['end_bar'] = BAR_SECTION_CLOSE
         return measures
 
-    def _make_rows(self, progression_data):
-        measures = self._convert_progression_data(progression_data)
+    def _make_rows(self, progression_data, multipliers):
+        measures = self._convert_progression_data(progression_data, multipliers)
         rows = []
         lastbreak = 0
         for i in range(len(measures)):
@@ -160,8 +165,10 @@ class HTMLRenderer(object):
         return title
 
     def load_song(self, song_data):
+        song_data['multipliers'] = self.DURATION_UNIT_MULTIPLIERS.copy()
+        song_data['multipliers'][DURATION_UNIT_MEASURE] = self._get_measure_length(song_data['time'])
         for progression in song_data['progressions']:
-            progression['rows'] = self._make_rows(progression['chords'])
+            progression['rows'] = self._make_rows(progression['chords'], song_data['multipliers'])
         for form_section in song_data['form']:
             self._prepare_form_section_lyrics(form_section)
         song_data['sort_title'] = self._get_sort_title(song_data['title'])
