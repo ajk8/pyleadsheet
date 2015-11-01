@@ -85,7 +85,6 @@ class HTMLRenderer(object):
                 reverse_measure_i -= 1
                 reverse_subdivision_i = -1
             reverse_subdivision_i -= 1
-        print last_chord, last_last_chord
         if last_chord == last_last_chord:
             measures[-1]['subdivisions'][-1] = ''
 
