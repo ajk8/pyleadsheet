@@ -153,11 +153,18 @@ class HTMLRenderer(object):
             form_section['lyrics'] = '<br />'.join(lines)
             form_section['lyrics_hint'] = (lines[0] if len(lines[0]) <= 50 else lines[0][0:50]) + '...'
 
+    def _get_sort_title(self, title):
+        words = title.split()
+        if len(words) > 1 and words[0].lower() == 'the':
+            return ' '.join(words[1:])
+        return title
+
     def load_song(self, song_data):
         for progression in song_data['progressions']:
             progression['rows'] = self._make_rows(progression['chords'])
         for form_section in song_data['form']:
             self._prepare_form_section_lyrics(form_section)
+        song_data['sort_title'] = self._get_sort_title(song_data['title'])
         self.songs_data[song_data['title']] = song_data
 
     def _get_output_filename(self, song_title, suffix=None):
@@ -169,7 +176,7 @@ class HTMLRenderer(object):
         template_data.update({
             'timestamp': self.timestamp,
             'modes': self.MODES,
-            'mode_keys': sorted(self.MODES.keys(), key=lambda(k): self.MODES[k]['display_order'])
+            'mode_keys': sorted(self.MODES.keys(), key=lambda k: self.MODES[k]['display_order'])
         })
 
     def _render_template_to_file(self, template, outputfilename, template_data):
@@ -196,16 +203,17 @@ class HTMLRenderer(object):
         logger.info('rendering index')
         songs_by_first_letter = {}
         current_letter = None
-        for title in sorted(self.songs_data.keys()):
-            if not current_letter or title[0].upper() > current_letter:
-                current_letter = title[0].upper()
+        titles = [{'display': k, 'sort': v['sort_title']} for k, v in self.songs_data.items()]
+        for title in sorted(titles, key=lambda k: k['sort']):
+            if not current_letter or title['sort'][0].upper() > current_letter:
+                current_letter = title['sort'][0].upper()
                 songs_by_first_letter[current_letter] = []
             songs_by_first_letter[current_letter].append(
-                {'title': title, 'filenames': {}}
+                {'title': title['display'], 'filenames': {}}
             )
             for mode in self.MODES.keys():
                 songs_by_first_letter[current_letter][-1]['filenames'][mode] = \
-                        self._get_output_filename(title, self.MODES[mode]['filename_suffix'])
+                        self._get_output_filename(title['display'], self.MODES[mode]['filename_suffix'])
         self._render_template_to_file(
             self.INDEX_TEMPLATE,
             'index.html',
