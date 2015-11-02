@@ -6,7 +6,12 @@
 
     <div id="header_container" class="content_container">
         <div id="song_title">{{ song.title }}</div>
-        {% if render_leadsheet %}<div id="song_attributes">{{ song.key }}, {{ song.time }}</div>{% endif %}
+        {% if render_leadsheet %}
+            <div id="song_attributes">
+                {{ song.key }}, {{ song.time.count }}/{{ song.time.unit }}
+                {% if song.feel %}[{{ song.feel }}]{% endif %}
+            </div>
+        {% endif %}
     </div>
 
     {% if render_leadsheet %}
