@@ -43,13 +43,26 @@ def _parse_chord(progression_substr):
     return chord_def, end_i
 
 
+def _all_open_chars():
+    ret = [CHORD_MARKUP['open_char']]
+    ret += [pg['open_char'] for pg in PROGRESSION_GROUPS.values()]
+    return ret
+
+
 def _parse_group(progression_substr, group_type):
     close_char = PROGRESSION_GROUPS[group_type]['close_char']
     end_i = _find_i(progression_substr, close_char)
     ret = {'group': group_type}
-    first_chord_open_i = _find_i(progression_substr, CHORD_MARKUP['open_char'])
-    ret['note'] = progression_substr[:first_chord_open_i] if first_chord_open_i > 0 else None
-    ret['progression'] = _parse_progression(progression_substr[first_chord_open_i:end_i])
+    first_directive_open_i = 9999
+    for open_char in _all_open_chars():
+        try:
+            open_i = _find_i(progression_substr, open_char)
+        except ValueError:
+            continue
+        if open_i < first_directive_open_i:
+            first_directive_open_i = open_i
+    ret['note'] = progression_substr[:first_directive_open_i] if first_directive_open_i > 0 else None
+    ret['progression'] = _parse_progression(progression_substr[first_directive_open_i:end_i])
     return ret, end_i
 
 
