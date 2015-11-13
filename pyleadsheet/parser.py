@@ -2,7 +2,7 @@ import os
 import yaml
 import funcy
 from .constants import DURATION_UNIT_MEASURE, DURATION_UNIT_BEAT, DURATION_UNIT_HALFBEAT
-from .constants import ARG_ROW_BREAK, REST
+from .constants import ARG_ROW_BREAK, REST, RIFF
 
 import logging
 logger = logging.getLogger(__name__)
@@ -25,14 +25,19 @@ def _parse_chord(progression_substr):
     end_i = _find_i(progression_substr, CHORD_MARKUP['close_char'])
     tokens = progression_substr[:end_i].split(CHORD_MARKUP['separator'])
     if tokens[0] == 'rest':
-        chord_parts = (REST, None, None)
+        chord_parts = (None, REST, None, None)
+    elif tokens[0] == 'riff':
+        chord_parts = (None, RIFF, None, None)
     else:
-        chord_parts = funcy.re_find(r'([A-Gb#]{1,2})([^/]+)?(/[A-Gb#]{1,2})?', tokens[0])
-    chord_def = {'chord': {'root': chord_parts[0]}, 'duration': []}
-    if chord_parts[1]:
-        chord_def['chord']['spec'] = chord_parts[1]
+        chord_parts = funcy.re_find(r'(\??)([A-Gb#]{1,2})([^/]+)?(/[A-Gb#]{1,2})?', tokens[0])
+    chord_def = {
+        'chord': {'root': chord_parts[1], 'optional': True if chord_parts[0] else False},
+        'duration': []
+    }
     if chord_parts[2]:
-        chord_def['chord']['base'] = chord_parts[2][1:]
+        chord_def['chord']['spec'] = chord_parts[2]
+    if chord_parts[3]:
+        chord_def['chord']['base'] = chord_parts[3][1:]
     if len(tokens) == 1:
         chord_def['duration'].append({'number': 1, 'unit': DURATION_UNIT_MEASURE})
     else:
@@ -102,6 +107,13 @@ def parse(yaml_str):
     for progression in pls_data['progressions']:
         logger.debug('parsing chords for progression: ' + progression['name'])
         progression['chords'] = _parse_progression(progression['chords'])
+        if 'comment' in progression.keys():
+            for section in pls_data['form']:
+                if section['progression'] == progression['name']:
+                    comment = progression['comment']
+                    if 'comment' in section.keys():
+                        comment += ' -- ' + section['comment']
+                    section['comment'] = comment
     if pls_data['time']:
         pls_data['time'] = _parse_time(pls_data['time'])
     return pls_data

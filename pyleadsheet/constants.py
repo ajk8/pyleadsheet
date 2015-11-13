@@ -9,7 +9,8 @@ BAR_SECTION_CLOSE = 'bar_3_section_close.png'
 BAR_REPEAT_OPEN = 'bar_4_repeat_open.png'
 BAR_REPEAT_CLOSE = 'bar_5_repeat_close.png'
 
-REST = '(x)'
+REST = '[x]'
+RIFF = '&lt;riff&gt;'
 FLAT = '&#9837;'
 SHARP = '&#9839;'
 
