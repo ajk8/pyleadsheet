@@ -7,6 +7,53 @@ from .constants import ARG_ROW_BREAK, REST, RIFF
 import logging
 logger = logging.getLogger(__name__)
 
+YAML_SCHEMA = {
+    'title': str,
+    'key': str,
+    'time': str,
+    'feel': str,
+    'progressions': [
+        {'name': str, 'chords': str, 'comment': str}
+    ],
+    'form': [
+        {'progression': str, 'reps': (str, int, float), 'comment': str, 'lyrics': str, 'continuation': bool}
+    ]
+}
+
+
+def _self_or_type(value):
+    if isinstance(value, type):
+        return value
+    return type(value)
+
+
+def _validate_schema(song_data):
+    for key, value in song_data.items():
+        if key not in YAML_SCHEMA.keys():
+            raise KeyError('invalid key found in yaml data: {0} (valid keys are {1})'.format(
+                key, YAML_SCHEMA.keys()
+            ))
+        elif not isinstance(value, _self_or_type(YAML_SCHEMA[key])):
+            raise TypeError('invalid value found in yaml data: {0}={1} (expecting {2})'.format(
+                key, value, _self_or_type(YAML_SCHEMA[key])
+            ))
+        elif isinstance(value, list):
+            for i in range(len(value)):
+                if not isinstance(value[i], _self_or_type(YAML_SCHEMA[key][0])):
+                    raise TypeError('invalid value found in yaml data: {0}[{1}]={2} (expecting {3})'.format(
+                        key, i, value, _self_or_type(YAML_SCHEMA[key][0])
+                    ))
+                for subkey, subvalue in value[i].items():
+                    if subkey not in YAML_SCHEMA[key][0].keys():
+                        raise KeyError('invalid key found in yaml data: {0}[{1}][{2}] (valid keys are {3})'.format(
+                            key, i, subkey, YAML_SCHEMA[key][0].keys()
+                        ))
+                    elif not isinstance(subvalue, YAML_SCHEMA[key][0][subkey]):
+                        raise TypeError('invalid value found in yaml data: {0}[{1}][{2}]={3} (expecting {4})'.format(
+                            key, i, subkey, subvalue, YAML_SCHEMA[key][0][subkey])
+                        )
+
+
 CHORD_MARKUP = {'open_char': '[', 'close_char': ']', 'separator': ':'}
 PROGRESSION_GROUPS = {
     'repeat': {'open_char': '{', 'close_char': '}'},
@@ -93,30 +140,47 @@ def _parse_progression(progression_str):
     return ret
 
 
-def _parse_time(time_str):
-    tokens = funcy.re_find(r'(\d+)/([48])', time_str)
-    if tokens is None:
-        raise ValueError('bad time signature, must be of the form int/int, with ' +
-                         'only 4 and 8 supported as units')
-    return {'count': int(tokens[0]), 'unit': int(tokens[1])}
-
-
-def parse(yaml_str):
-    pls_data = yaml.load(yaml_str)
-    logger.debug('parsing input for song: ' + pls_data['title'])
-    for progression in pls_data['progressions']:
+def _process_progression_chords(song_data):
+    for progression in song_data['progressions']:
         logger.debug('parsing chords for progression: ' + progression['name'])
         progression['chords'] = _parse_progression(progression['chords'])
+
+
+def _process_comments(song_data):
+    for progression in song_data['progressions']:
         if 'comment' in progression.keys():
-            for section in pls_data['form']:
+            for section in song_data['form']:
                 if section['progression'] == progression['name']:
+                    logger.debug('prepending progression comment')
                     comment = progression['comment']
                     if 'comment' in section.keys():
                         comment += ' -- ' + section['comment']
                     section['comment'] = comment
-    if pls_data['time']:
-        pls_data['time'] = _parse_time(pls_data['time'])
-    return pls_data
+    for i in range(len(song_data['form'])):
+        if 'continuation' in song_data['form'][i].keys():
+            comment = 'continuation of ' + song_data['form'][i-1]['progression']
+            if 'comment' in song_data['form'][i].keys():
+                comment += ' -- ' + song_data['form'][i]['comment']
+            song_data['form'][i]['comment'] = comment
+
+
+def _process_time_signature(song_data):
+    if song_data['time']:
+        tokens = funcy.re_find(r'(\d+)/([48])', song_data['time'])
+        if tokens is None:
+            raise ValueError('bad time signature, must be of the form int/int, with ' +
+                             'only 4 and 8 supported as units')
+        song_data['time'] = {'count': int(tokens[0]), 'unit': int(tokens[1])}
+
+
+def parse(yaml_str):
+    song_data = yaml.load(yaml_str)
+    logger.debug('parsing input for song: ' + song_data['title'])
+    _validate_schema(song_data)
+    _process_progression_chords(song_data)
+    _process_comments(song_data)
+    _process_time_signature(song_data)
+    return song_data
 
 
 def parse_file(filepath):

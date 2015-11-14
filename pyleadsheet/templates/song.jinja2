@@ -70,7 +70,13 @@
             <div id="lyrics_title" class="content_container_title">Lyrics</div>
             <div id="lyrics_content">
                 {% for section in song.form %}
-                    {% if section.lyrics %}{{ section.lyrics|safe }}<br /><br />{% endif %}
+                    {% if section.lyrics %}
+                        {% if not loop.first %}
+                            <br />
+                            {% if not section.continuation %}<br />{% endif %}
+                        {% endif %}
+                        {{ section.lyrics|safe }}
+                    {% endif %}
                 {% endfor %}
             </div>
         </div>
