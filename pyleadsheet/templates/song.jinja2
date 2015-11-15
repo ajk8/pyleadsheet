@@ -71,10 +71,11 @@
             <div id="lyrics_content">
                 {% for section in song.form %}
                     {% if section.lyrics %}
-                        {% if not loop.first %}
+                        {% if break_flag %}
                             <br />
                             {% if not section.continuation %}<br />{% endif %}
                         {% endif %}
+                        {% set break_flag = True %}
                         {{ section.lyrics|safe }}
                     {% endif %}
                 {% endfor %}
