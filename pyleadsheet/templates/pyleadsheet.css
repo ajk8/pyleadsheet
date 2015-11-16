@@ -69,7 +69,7 @@ body {
     display: inline-block;
     position: relative;
     height: 0.8em;
-    width: 0.5em;
+    width: 0.4em;
     font-size: 2.5em;
     text-align: center;
 }
@@ -112,6 +112,7 @@ body {
 
 .subdivisions_6 .progression_measure_subdivision { width: 1.425em; }
 .subdivisions_8 .progression_measure_subdivision { width: 1em; }
+.condensed .subdivisions_8 .progression_measure_subdivision { width: 0.27em; }
 
 .progression_chord_root {
     float: left;

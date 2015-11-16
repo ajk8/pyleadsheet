@@ -12,6 +12,7 @@ YAML_SCHEMA = {
     'key': str,
     'time': str,
     'feel': str,
+    'condense_measures': bool,
     'progressions': [
         {'name': str, 'chords': str, 'comment': str}
     ],

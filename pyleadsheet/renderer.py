@@ -7,7 +7,7 @@ import json
 from wkhtmltopdfwrapper import wkhtmltopdf
 from .constants import DURATION_UNIT_MEASURE, DURATION_UNIT_BEAT, DURATION_UNIT_HALFBEAT
 from .constants import BAR_SINGLE, BAR_DOUBLE, BAR_SECTION_OPEN, BAR_SECTION_CLOSE, BAR_REPEAT_OPEN, BAR_REPEAT_CLOSE
-from .constants import ARG_ROW_BREAK, FLAT, SHARP
+from .constants import ARG_ROW_BREAK
 from .constants import FILENAME_SUFFIX_COMBINED, FILENAME_SUFFIX_NO_LYRICS, FILENAME_SUFFIX_LYRICS_ONLY
 
 import logging
@@ -69,10 +69,18 @@ class HTMLRenderer(object):
                         logged = True
                     shutil.copy(fromfile, tofile)
 
-    def _get_measure_length(self, time_data):
-        # this assumes that
-        multiplier = 1.0 / (float(time_data['unit']) / 8.0)
-        return int(time_data['count'] * multiplier)
+    def _calculate_max_measures_per_row(self, song_data):
+        song_data['max_measures_per_row'] = self.MAX_MEASURES_PER_ROW
+        if 'condense_measures' in song_data.keys() and song_data['condense_measures']:
+            song_data['max_measures_per_row'] *= 2
+
+    def _calculate_multipliers(self, song_data):
+        song_data['multipliers'] = self.DURATION_UNIT_MULTIPLIERS.copy()
+        measure_mult_mult = 1.0 / (float(song_data['time']['unit']) / 8.0)
+        song_data['multipliers'][DURATION_UNIT_MEASURE] = int(song_data['time']['count'] * measure_mult_mult)
+        # if 'condense_measures' in song_data.keys() and song_data['condense_measures']:
+        #     for key in song_data['multipliers'].keys():
+        #         song_data['multipliers'][key] /= 2
 
     def _clean_last_chord(self, measures):
         last_chord = measures[-1]['subdivisions'][-1]
@@ -134,14 +142,14 @@ class HTMLRenderer(object):
             measures[-1]['end_bar'] = BAR_SECTION_CLOSE
         return measures
 
-    def _make_rows(self, progression_data, multipliers):
+    def _make_rows(self, progression_data, multipliers, max_measures):
         measures = self._convert_progression_data(progression_data, multipliers)
         rows = []
         lastbreak = 0
         for i in range(len(measures)):
             if (
                 i == 0 or
-                i - lastbreak == self.MAX_MEASURES_PER_ROW or
+                i - lastbreak == max_measures or
                 measures[i-1]['end_bar'] in (BAR_REPEAT_CLOSE, BAR_SECTION_CLOSE) or
                 ARG_ROW_BREAK in measures[i-1]['args']
             ):
@@ -165,10 +173,14 @@ class HTMLRenderer(object):
         return title
 
     def load_song(self, song_data):
-        song_data['multipliers'] = self.DURATION_UNIT_MULTIPLIERS.copy()
-        song_data['multipliers'][DURATION_UNIT_MEASURE] = self._get_measure_length(song_data['time'])
+        self._calculate_multipliers(song_data)
+        self._calculate_max_measures_per_row(song_data)
         for progression in song_data['progressions']:
-            progression['rows'] = self._make_rows(progression['chords'], song_data['multipliers'])
+            progression['rows'] = self._make_rows(
+                progression['chords'],
+                song_data['multipliers'],
+                song_data['max_measures_per_row']
+            )
         for form_section in song_data['form']:
             self._prepare_form_section_lyrics(form_section)
         song_data['sort_title'] = self._get_sort_title(song_data['title'])

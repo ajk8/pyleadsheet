@@ -15,7 +15,7 @@
     </div>
 
     {% if render_leadsheet %}
-        <div id="progressions_container" class="content_container">
+        <div id="progressions_container" class="content_container{% if song.condense_measures %} condensed{% endif %}">
             <div id="progressions_title" class="content_container_title">Progressions</div>
             <div id="progressions_content">
                 {% for progression in song.progressions %}
