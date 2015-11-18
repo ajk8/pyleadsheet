@@ -89,7 +89,7 @@ class HTMLRenderer(object):
         last_last_chord = ''
         reverse_subdivision_i = -2
         reverse_measure_i = -1
-        while last_last_chord == '':
+        while last_last_chord == '' and abs(reverse_measure_i) <= len(measures):
             try:
                 last_last_chord = measures[reverse_measure_i]['subdivisions'][reverse_subdivision_i]
             except IndexError:
