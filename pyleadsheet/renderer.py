@@ -9,6 +9,7 @@ from .constants import DURATION_UNIT_MEASURE, DURATION_UNIT_BEAT, DURATION_UNIT_
 from .constants import BAR_SINGLE, BAR_DOUBLE, BAR_SECTION_OPEN, BAR_SECTION_CLOSE, BAR_REPEAT_OPEN, BAR_REPEAT_CLOSE
 from .constants import ARG_ROW_BREAK
 from .constants import FILENAME_SUFFIX_COMBINED, FILENAME_SUFFIX_NO_LYRICS, FILENAME_SUFFIX_LYRICS_ONLY
+from .transposer import transpose_by_half_steps, transpose_by_new_root
 
 import logging
 logger = logging.getLogger(__name__)
@@ -82,6 +83,22 @@ class HTMLRenderer(object):
         #     for key in song_data['multipliers'].keys():
         #         song_data['multipliers'][key] /= 2
 
+    def _calculate_transposition(self, song_data, transpose_half_steps, transpose_to_root):
+        if transpose_half_steps:
+            song_data['transpose'] = {
+                'method': transpose_by_half_steps,
+                'key': song_data['key'],
+                'value': int(transpose_half_steps)
+            }
+        elif transpose_to_root:
+            song_data['transpose'] = {
+                'method': transpose_by_new_root,
+                'key': song_data['key'],
+                'value': transpose_to_root
+            }
+        else:
+            song_data['transpose'] = None
+
     def _clean_last_chord(self, measures):
         last_chord = measures[-1]['subdivisions'][-1]
         if last_chord == '':
@@ -101,7 +118,7 @@ class HTMLRenderer(object):
         if last_chord == last_last_chord:
             measures[-1]['subdivisions'][-1] = ''
 
-    def _convert_progression_data(self, progression_data, multipliers):
+    def _convert_progression_data(self, progression_data, multipliers, transpose):
         measures = []
         cursor = 0
         for datum in progression_data:
@@ -119,6 +136,8 @@ class HTMLRenderer(object):
                     group_measures[0]['start_note'] = datum['note'] if datum['note'] else ''
                 measures += group_measures
             elif 'chord' in datum.keys():
+                if transpose:
+                    transpose['method'](datum['chord'], transpose['key'], transpose['value'])
                 subdivisions = 0
                 for duration_part in datum['duration']:
                     subdivisions += duration_part['number'] * multipliers[duration_part['unit']]
@@ -142,8 +161,8 @@ class HTMLRenderer(object):
             measures[-1]['end_bar'] = BAR_SECTION_CLOSE
         return measures
 
-    def _make_rows(self, progression_data, multipliers, max_measures):
-        measures = self._convert_progression_data(progression_data, multipliers)
+    def _make_rows(self, progression_data, multipliers, max_measures, transpose):
+        measures = self._convert_progression_data(progression_data, multipliers, transpose)
         rows = []
         lastbreak = 0
         for i in range(len(measures)):
@@ -172,14 +191,16 @@ class HTMLRenderer(object):
             return ' '.join(words[1:])
         return title
 
-    def load_song(self, song_data):
+    def load_song(self, song_data, transpose_half_steps, transpose_to_root):
         self._calculate_multipliers(song_data)
         self._calculate_max_measures_per_row(song_data)
+        self._calculate_transposition(song_data, transpose_half_steps, transpose_to_root)
         for progression in song_data['progressions']:
             progression['rows'] = self._make_rows(
                 progression['chords'],
                 song_data['multipliers'],
-                song_data['max_measures_per_row']
+                song_data['max_measures_per_row'],
+                song_data['transpose']
             )
         for form_section in song_data['form']:
             self._prepare_form_section_lyrics(form_section)
@@ -241,11 +262,12 @@ class HTMLRenderer(object):
         )
         json.dump(songs_by_first_letter, open(os.path.join(self.outputdir, self.INDEX_JSON_FILE), 'w'))
 
-    def render_book(self):
+    def render_book(self, no_index=False):
         logger.info('rendering HTML book')
         for song_title in self.songs_data.keys():
             self.render_song(song_title)
-        self.render_index()
+        if not no_index:
+            self.render_index()
 
 
 class HTMLToPDFConverter(object):

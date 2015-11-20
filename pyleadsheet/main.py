@@ -7,11 +7,16 @@ Usage:
     pyleadsheet help
 
 Options:
-    -h             print this help screen
-    --output=DIR   directory to place html files in (default: output)
-    --pdf          convert html files to pdf after initial rendering
-    --clean        start from a fresh output diretory
-    --debug        use verbose logging
+    -h, --help                  print this help screen
+    --output=DIR                directory to place html files in
+                                (default: output)
+    --no-index                  don't (re)generate an index
+    --pdf                       convert html files to pdf after initial
+                                rendering
+    --transpose-half-steps=INT  transpose song +/- INT half steps
+    --transpose-to-root=ROOT    transpose song to be rooted at ROOT
+    --clean                     start from a fresh output diretory
+    --debug                     use verbose logging
 """
 
 import os
@@ -43,8 +48,12 @@ def generate(args):
     renderer = HTMLRenderer(outputdir)
     for yamlfile in inputfiles:
         song_data = parse_file(yamlfile)
-        renderer.load_song(song_data)
-    renderer.render_book()
+        renderer.load_song(
+            song_data,
+            transpose_half_steps=args['--transpose-half-steps'],
+            transpose_to_root=args['--transpose-to-root']
+        )
+    renderer.render_book(no_index=args['--no-index'])
 
     if args['--pdf']:
         converter = HTMLToPDFConverter(outputdir)
