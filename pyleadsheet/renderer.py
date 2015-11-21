@@ -126,7 +126,7 @@ class HTMLRenderer(object):
                 if datum['arg'] == ARG_ROW_BREAK:
                     measures[-1]['args'].append(ARG_ROW_BREAK)
             elif 'group' in datum.keys():
-                group_measures = self._convert_progression_data(datum['progression'], multipliers)
+                group_measures = self._convert_progression_data(datum['progression'], multipliers, transpose)
                 if datum['group'] == 'repeat':
                     group_measures[0]['start_bar'] = BAR_REPEAT_OPEN
                     group_measures[-1]['end_bar'] = BAR_REPEAT_CLOSE
