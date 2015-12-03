@@ -308,11 +308,8 @@ class HTMLToPDFConverter(object):
         for songs in self.songs_by_first_letter.values():
             for song_data in songs:
                 logger.info('converting song to pdf: ' + song_data['title'])
-                wkhtmltopdf(
-                    'file://{0}/{1}'.format(os.path.abspath(self.inputdir), song_data['filenames']['no_lyrics']),
-                    os.path.join(self.outputdir, self._get_output_filename(song_data['filenames']['no_lyrics']))
-                )
-                wkhtmltopdf(
-                    'file://{0}/{1}'.format(os.path.abspath(self.inputdir), song_data['filenames']['lyrics_only']),
-                    os.path.join(self.outputdir, self._get_output_filename(song_data['filenames']['lyrics_only']))
-                )
+                for filename in song_data['filenames'].values():
+                    wkhtmltopdf(
+                        'file://{0}/{1}'.format(os.path.abspath(self.inputdir), filename),
+                        os.path.join(self.outputdir, self._get_output_filename(filename))
+                    )
