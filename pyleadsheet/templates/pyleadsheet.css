@@ -1,27 +1,42 @@
 body {
     font-family: sans-serif;
+    text-align: center;
 }
 
 .content_container {
-    padding-bottom: .5em;
-    clear: both;
+    vertical-align: top;
+    text-align: left;
+    margin-right: 1em;
+    margin-bottom: 1em;
 }
 
 .content_container_title {
-    font-size: 1.2em;
-    font-variant: small-caps;
+    /*font-size: 1.2em;*/
+    /*font-variant: small-caps;*/
+    font-weight: 700;
     padding-top: 0.5em;
-    padding-bottom: 0.5em;
+    padding-bottom: 0.9em;
 }
 
-.content_container_spacer {
-    clear: both;
-    height: 0.5em;
+#header_container {
+    text-align: center;
 }
 
 #footer_container {
     clear: both;
     font-size: 0.7em;
+}
+
+#progressions_container {
+    display: inline-block;
+}
+
+#form_container {
+    display: inline-block;
+}
+
+#lyrics_container {
+    display: inline-block;
 }
 
 #song_title {
@@ -41,6 +56,13 @@ body {
     display: inline-block;
     padding: 0.2em;
     padding-bottom: 0.35em;
+    width: 53em;
+}
+
+@media print {
+    .row {
+        width: 50em;
+    }
 }
 
 .fixed_width {
@@ -51,13 +73,15 @@ body {
 }
 
 .odd {
-    background-color: #EEE;
+    background-color: #E5F4F6;
 }
 
 .progression_name {
     float: left;
-    padding-left: 0.2em;
-    padding-top: 0.6em;
+    color: #444;
+    font-style: italic;
+    padding-left: 0.25em;
+    padding-top: 0.7em;
     padding-right: 0.5em;
 }
 
@@ -79,6 +103,7 @@ body {
     top: -0.2em;
     left: -0.4em;
     height: 1.3em;
+    opacity: 0.4;
 }
 
 .progression_measure_delimiter_start_note {
@@ -87,6 +112,7 @@ body {
     top: -0.15em;
     left: 1.1em;
     font-size: 0.35em;
+    color: #444;
 }
 
 .progression_measure_delimiter_end_note {
@@ -95,6 +121,7 @@ body {
     top: -0.15em;
     left: -0.5em;
     font-size: 0.35em;
+    color: #444;
 }
 
 .progression_measure_content {
@@ -127,18 +154,16 @@ body {
 }
 
 .form_section {
-    width: 54em;
-    padding-top: 0.6em;
+    width: 32em;
+    color: #444;
+    padding-left: 0.35em;
+    padding-top: 0.4em;
 }
 
 .form_section_progression {
-    float: left;
-    padding-left: 0.2em;
-    padding-right: 0.5em;
 }
 
 .form_section_reps {
-    display: inline-block;
     width: 3em;
 }
 

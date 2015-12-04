@@ -48,21 +48,23 @@
                 {% endfor %}
             </div>
         </div>
-        <div class="content_container_spacer"></div>
         <div id="form_container" class="content_container">
             <div id="form_title" class="content_container_title">Form</div>
             <div id="form_content">
                 {% for section in song.form %}
                     <div class="form_section row {{ loop.cycle('odd', 'even') }}">
-                        <div class="form_section_progression fixed_width">{{ section.progression }}</div>
-                        <span class="form_section_reps">{% if section.reps %}{{ section.reps }}x{% endif %}</span>
-                        <span class="form_section_comment">{% if section.comment %}{{ section.comment }}{% endif %}</span>
+                        <table>
+                            <tr>
+                                <td class="form_section_name fixed_width">{{ section.progression }}</td>
+                                <td class="form_section_reps">{% if section.reps %}{{ section.reps }}x{% endif %}</td>
+                                <td class="form_section_comment">{% if section.comment %}{{ section.comment }}{% endif %}</td>
+                            </tr>
+                        </table>
                         <div class="form_section_lyrics_hint">{{ section.lyrics_hint }}</div>
                     </div>
                 {% endfor %}
             </div>
         </div>
-        <div class="content_container_spacer"></div>
     {% endif %}
 
     {% if render_lyrics %}
