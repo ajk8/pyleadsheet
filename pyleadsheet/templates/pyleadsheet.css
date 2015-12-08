@@ -12,7 +12,7 @@ body {
 
 .content_container_title {
     /*font-size: 1.2em;*/
-    /*font-variant: small-caps;*/
+    font-variant: small-caps;
     font-weight: 700;
     padding-top: 0.5em;
     padding-bottom: 0.9em;
@@ -20,6 +20,9 @@ body {
 
 #header_container {
     text-align: center;
+    background-color: #144F43;
+    color: #FFF;
+    padding: 0.5em;
 }
 
 #footer_container {
