@@ -1,0 +1,27 @@
+{% extends "base.jinja2" %}
+
+{% block page_title %}Table of Contents{% endblock %}\
+
+{% block content %}
+
+    <div id="header_container" class="content_container">
+        <div id="song_title">Songbook</div>
+    </div>
+
+    <div id="toc_container" class="content_container">
+        {% for letter, songs in songs_by_first_letter.items() %}
+            <div class="toc_letter">{{ letter }}</div>
+            <table class="index_table">
+                {% for song in songs %}
+                    <tr class="{{ loop.cycle('odd', 'even') }}">
+                        <td class="index_song_title">{{ song.display_title }}</td>
+                        {% for url in song.urls %}
+                            <td><a href="{{ url }}">{{ url.split('/')[-1] }}</a></td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endfor %}
+    </div>
+
+{% endblock %}

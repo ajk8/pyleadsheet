@@ -26,7 +26,7 @@
                                 <div class="progression_row">
                                     {% for measure in row %}
                                         <span class="progression_measure_delimiter">
-                                            <img src="{{ measure.start_bar }}" />
+                                            <img src="{{ url_for('static', filename=measure.start_bar) }}" />
                                             <div class="progression_measure_delimiter_start_note">{{ measure.start_note }}</div>
                                         </span>
                                         <span class="progression_measure_content subdivisions_{{ num_subdivisions }}">
@@ -38,7 +38,7 @@
                                         </span>
                                     {% endfor %}
                                     <span class="progression_measure_delimiter">
-                                        <img src="{{ row[-1].end_bar }}" />
+                                        <img src="{{ url_for('static', filename=row[-1].end_bar) }}" />
                                         <div class="progression_measure_delimiter_end_note">{{ row[-1].end_note }}</div>
                                     </span>
                                 </div>

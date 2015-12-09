@@ -30,7 +30,8 @@ setup(
         'funcy',
         'pyyaml',
         'jinja2',
-        'wkhtmltopdf-wrapper'
+        'wkhtmltopdf-wrapper',
+        'flask'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',

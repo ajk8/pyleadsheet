@@ -4,6 +4,7 @@ pyleadsheet -- convert a chordpro-like file into a pretty pdf leadsheet
 Usage:
     pyleadsheet generate <inputfile> [options]
     pyleadsheet generate <inputdir> [options]
+    pyleadsheet runserver <inputdir> [--debug]
     pyleadsheet help
 
 Options:
@@ -23,9 +24,18 @@ import os
 import sys
 import docopt
 import shutil
+from .server import run as start_server
 from .parser import parse_file
 from .renderer import HTMLRenderer, HTMLToPDFConverter
 import logging
+logger = logging.getLogger(__name__)
+
+
+def runserver(args):
+    if not os.path.isdir(args['<inputdir>']):
+        logger.error('tried to start server with invalid input dir: ' + args['<inputdir>'])
+        return 1
+    return start_server(args['<inputdir>'], debug=args['--debug'])
 
 
 def generate(args):
@@ -69,6 +79,9 @@ def main():
     if args['help']:
         print(__doc__)
         return 0
+
+    elif args['runserver']:
+        return runserver(args)
 
     elif args['generate']:
         return generate(args)

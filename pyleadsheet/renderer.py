@@ -15,6 +15,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _spoof_url_for(path, filename=None):
+    return filename
+
+
 class HTMLRenderer(object):
 
     SONG_TEMPLATE = 'song.jinja2'
@@ -58,7 +62,7 @@ class HTMLRenderer(object):
         if not os.path.exists(self.outputdir):
             logger.debug('creating outputdir')
             os.makedirs(self.outputdir)
-        fromdir = os.path.join(os.path.dirname(__file__), 'templates')
+        fromdir = os.path.join(os.path.dirname(__file__), 'static')
         logged = False
         for filename in os.listdir(fromdir):
             if not filename.endswith('jinja2'):
@@ -236,7 +240,8 @@ class HTMLRenderer(object):
                     'song': self.songs_data[song_title],
                     'num_subdivisions': self.songs_data[song_title]['multipliers'][DURATION_UNIT_MEASURE],
                     'render_leadsheet': mode['render_leadsheet'],
-                    'render_lyrics': mode['render_lyrics']
+                    'render_lyrics': mode['render_lyrics'],
+                    'url_for': _spoof_url_for
                 }
             )
 
@@ -258,7 +263,11 @@ class HTMLRenderer(object):
         self._render_template_to_file(
             self.INDEX_TEMPLATE,
             'index.html',
-            {'songs_by_first_letter': songs_by_first_letter, 'sorted_letters': sorted(songs_by_first_letter.keys())}
+            {
+                'songs_by_first_letter': songs_by_first_letter,
+                'sorted_letters': sorted(songs_by_first_letter.keys()),
+                'url_for': _spoof_url_for
+            }
         )
         json.dump(songs_by_first_letter, open(os.path.join(self.outputdir, self.INDEX_JSON_FILE), 'w'))
 

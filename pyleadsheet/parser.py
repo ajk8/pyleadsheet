@@ -184,8 +184,19 @@ def parse(yaml_str):
     return song_data
 
 
-def parse_file(filepath):
+def _get_content_from_song_file(filepath):
     if not os.path.isfile(filepath):
         raise IOError('could not find any file at {0}'.format(filepath))
-    contents = open(filepath, 'r').read()
-    return parse(contents)
+    content = open(filepath, 'r').read()
+    return content
+
+
+def parse_file(filepath):
+    content = _get_content_from_song_file(filepath)
+    return parse(content)
+
+
+def get_title_from_song_file(filepath):
+    content = _get_content_from_song_file(filepath)
+    song_data = yaml.load(content)
+    return song_data['title']

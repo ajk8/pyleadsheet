@@ -3,7 +3,7 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>{% block page_title %}{% endblock %} (pyleadsheet)</title>
-        <link rel="stylesheet" type="text/css" href="pyleadsheet.css" />
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='pyleadsheet.css') }}" />
     </head>
 
     <body>

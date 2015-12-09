@@ -19,3 +19,5 @@ ARG_ROW_BREAK = '/'
 FILENAME_SUFFIX_COMBINED = 'combined'
 FILENAME_SUFFIX_NO_LYRICS = 'leadsheet'
 FILENAME_SUFFIX_LYRICS_ONLY = 'lyrics'
+
+VIEWS = ['combined', 'leadsheet', 'lyrics']
