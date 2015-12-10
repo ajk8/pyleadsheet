@@ -16,6 +16,18 @@ DURATION_UNIT_MULTIPLIERS = {
 
 
 def _get_sortable_title(title):
+    """Doctest:
+    >>> _get_sortable_title('Homeward Bound')
+    'Homeward Bound'
+    >>> _get_sortable_title('The Onion Strikes Again')
+    'Onion Strikes Again'
+    >>> _get_sortable_title('the lowercase')
+    'lowercase'
+    >>> _get_sortable_title('THE')
+    'THE'
+    >>> _get_sortable_title('Theoretically True')
+    'Theoretically True'
+    """
     if title.lower().startswith('the '):
         title = ' '.join(title.split()[1:])
     return title
@@ -45,17 +57,44 @@ def compose_index_kwargs(filepaths):
     return view_kwargs
 
 
-def _calculate_max_measures_per_row(song_data):
-    song_data['max_measures_per_row'] = MAX_MEASURES_PER_ROW
-    if 'condense_measures' in song_data.keys() and song_data['condense_measures']:
-        song_data['max_measures_per_row'] *= 2
+def _calculate_max_measures_per_row(condense_measures):
+    """Doctest:
+    >>> _calculate_max_measures_per_row(False)
+    4
+    >>> _calculate_max_measures_per_row(True)
+    8
+    """
+    max_measures_per_row = MAX_MEASURES_PER_ROW
+    if condense_measures:
+        max_measures_per_row *= 2
+    return max_measures_per_row
 
 
-def _calculate_multipliers(song_data):
+def _add_max_measures_per_row_to_song_data(song_data):
+    condense_measures = 'condense_measures' in song_data.keys() and song_data['condense_measures']
+    song_data['max_measures_per_row'] = _calculate_max_measures_per_row(condense_measures)
+
+
+def _calculate_duration_unit_measure(time_signature_count, time_signature_unit):
+    """Doctest:
+    >>> _calculate_duration_unit_measure(4, 4)
+    8
+    >>> _calculate_duration_unit_measure(7, 4)
+    14
+    >>> _calculate_duration_unit_measure(3, 4)
+    6
+    >>> _calculate_duration_unit_measure(6, 8)
+    6
+    """
+    default_units_per_measure = DURATION_UNIT_MULTIPLIERS[constants.DURATION_UNIT_MEASURE]
+    new_unit_multiplier = 1.0 / (float(time_signature_unit) / default_units_per_measure)
+    return int(time_signature_count * new_unit_multiplier)
+
+
+def _add_multipliers_to_song_data(song_data):
+    dum = _calculate_duration_unit_measure(song_data['time']['count'], song_data['time']['unit'])
     song_data['multipliers'] = DURATION_UNIT_MULTIPLIERS.copy()
-    measure_mult_mult = 1.0 / (float(song_data['time']['unit']) / 8.0)
-    song_data['multipliers'][constants.DURATION_UNIT_MEASURE] = \
-        int(song_data['time']['count'] * measure_mult_mult)
+    song_data['multipliers'][constants.DURATION_UNIT_MEASURE] = dum
 
 
 def _calculate_transposition(song_data, transpose_half_steps, transpose_to_root):
@@ -156,20 +195,48 @@ def _make_rows(progression_data, multipliers, max_measures, transpose):
     return rows
 
 
+def _convert_linebreaks_to_html(text_snippet):
+    """Doctest:
+    >>> _convert_linebreaks_to_html('i am a single line string')
+    'i am a single line string'
+    >>> _convert_linebreaks_to_html('''i am a
+    ... multiline
+    ...
+    ... string''')
+    'i am a<br />multiline<br /><br />string'
+    """
+    lines = text_snippet.splitlines()
+    return '<br />'.join(lines)
+
+
+def _generate_text_snippet_hint(text_snippet):
+    """Doctest:
+    >>> _generate_text_snippet_hint('i am a short snippet')
+    'i am a short snippet'
+    >>> _generate_text_snippet_hint('''i am a series
+    ... of short
+    ... lines''')
+    'i am a series...'
+    >>> _generate_text_snippet_hint('i am a very long line, rather longer than '
+                                    'i might need to be -- so long, in fact, '
+                                    'that i need to be split to not trip pep8')
+    'i am a very long line, rather longer than i might ...'
+    """
+    lines = text_snippet.splitlines()
+    if len(lines) == 1 and len(lines[0]) < 50:
+        return lines[0]
+    elif len(lines) > 1:
+        return lines[0] + '...'
+    else:
+        return lines[0][0:49] + '...'
+
+
 def _prepare_form_section_lyrics(form_section):
     if 'lyrics' not in form_section.keys():
         form_section['lyrics'] = form_section['lyrics_hint'] = ''
     else:
-        lines = form_section['lyrics'].splitlines()
-        form_section['lyrics'] = '<br />'.join(lines)
-        form_section['lyrics_hint'] = (lines[0] if len(lines[0]) <= 50 else lines[0][0:50]) + '...'
-
-
-def _get_sort_title(title):
-    words = title.split()
-    if len(words) > 1 and words[0].lower() == 'the':
-        return ' '.join(words[1:])
-    return title
+        form_section['lyrics'] = _convert_linebreaks_to_html(form_section['lyrics'])
+        form_section['lyrics_hint'] = _generate_text_snippet_hint(form_section['lyrics'])
 
 
 def compose_song_kwargs(filepath, song_view_type, transpose_half_steps, transpose_to_root):
@@ -178,8 +245,8 @@ def compose_song_kwargs(filepath, song_view_type, transpose_half_steps, transpos
     if song_view_type not in SONG_VIEW_TYPES:
         raise ValueError('invalid song view type: ' + song_view_type)
     song_data = parser.parse_file(filepath)
-    _calculate_multipliers(song_data)
-    _calculate_max_measures_per_row(song_data)
+    _add_multipliers_to_song_data(song_data)
+    _add_max_measures_per_row_to_song_data(song_data)
     _calculate_transposition(song_data, transpose_half_steps, transpose_to_root)
     for progression in song_data['progressions']:
         progression['rows'] = _make_rows(
@@ -190,7 +257,6 @@ def compose_song_kwargs(filepath, song_view_type, transpose_half_steps, transpos
         )
     for form_section in song_data['form']:
         _prepare_form_section_lyrics(form_section)
-    song_data['sort_title'] = _get_sort_title(song_data['title'])
     return {
         'song': song_data,
         'num_subdivisions': song_data['multipliers'][constants.DURATION_UNIT_MEASURE],

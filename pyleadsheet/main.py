@@ -74,7 +74,10 @@ def generate(args):
 
 def main():
     args = docopt.docopt(__doc__)
-    logging.basicConfig(stream=sys.stderr, level=logging.DEBUG if args['--debug'] else logging.INFO)
+    logging.basicConfig(
+        stream=sys.stderr,
+        level=logging.DEBUG if args['--debug'] else logging.INFO
+    )
 
     if args['help']:
         print(__doc__)

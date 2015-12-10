@@ -259,7 +259,7 @@ class HTMLRenderer(object):
             )
             for mode in self.MODES.keys():
                 songs_by_first_letter[current_letter][-1]['filenames'][mode] = \
-                        self._get_output_filename(title['display'], self.MODES[mode]['filename_suffix'])
+                    self._get_output_filename(title['display'], self.MODES[mode]['filename_suffix'])
         self._render_template_to_file(
             self.INDEX_TEMPLATE,
             'index.html',

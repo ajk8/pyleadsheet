@@ -14,10 +14,20 @@ YAML_SCHEMA = {
     'feel': str,
     'condense_measures': bool,
     'progressions': [
-        {'name': str, 'chords': str, 'comment': str}
+        {
+            'name': str,
+            'chords': str,
+            'comment': str
+        }
     ],
     'form': [
-        {'progression': str, 'reps': (str, int, float), 'comment': str, 'lyrics': str, 'continuation': bool}
+        {
+            'progression': str,
+            'reps': (str, int, float),
+            'comment': str,
+            'lyrics': str,
+            'continuation': bool
+        }
     ]
 }
 
@@ -41,17 +51,25 @@ def _validate_schema(song_data):
         elif isinstance(value, list):
             for i in range(len(value)):
                 if not isinstance(value[i], _self_or_type(YAML_SCHEMA[key][0])):
-                    raise TypeError('invalid value found in yaml data: {0}[{1}]={2} (expecting {3})'.format(
-                        key, i, value, _self_or_type(YAML_SCHEMA[key][0])
-                    ))
+                    raise TypeError(
+                        'invalid value found in yaml data: {0}[{1}]={2} (expecting {3})'.format(
+                            key, i, value, _self_or_type(YAML_SCHEMA[key][0])
+                        )
+                    )
                 for subkey, subvalue in value[i].items():
                     if subkey not in YAML_SCHEMA[key][0].keys():
-                        raise KeyError('invalid key found in yaml data: {0}[{1}][{2}] (valid keys are {3})'.format(
-                            key, i, subkey, YAML_SCHEMA[key][0].keys()
-                        ))
+                        raise KeyError(
+                            'invalid key found in yaml data: '
+                            '{0}[{1}][{2}] (valid keys are {3})'.format(
+                                key, i, subkey, YAML_SCHEMA[key][0].keys()
+                            )
+                        )
                     elif not isinstance(subvalue, YAML_SCHEMA[key][0][subkey]):
-                        raise TypeError('invalid value found in yaml data: {0}[{1}][{2}]={3} (expecting {4})'.format(
-                            key, i, subkey, subvalue, YAML_SCHEMA[key][0][subkey])
+                        raise TypeError(
+                            'invalid value found in yaml data: '
+                            '{0}[{1}][{2}]={3} (expecting {4})'.format(
+                                key, i, subkey, subvalue, YAML_SCHEMA[key][0][subkey]
+                            )
                         )
 
 
@@ -114,7 +132,8 @@ def _parse_group(progression_substr, group_type):
             continue
         if open_i < first_directive_open_i:
             first_directive_open_i = open_i
-    ret['note'] = progression_substr[:first_directive_open_i] if first_directive_open_i > 0 else None
+    ret['note'] = progression_substr[:first_directive_open_i] \
+        if first_directive_open_i > 0 else None
     ret['progression'] = _parse_progression(progression_substr[first_directive_open_i:end_i])
     return ret, end_i
 

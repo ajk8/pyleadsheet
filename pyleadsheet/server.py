@@ -3,7 +3,6 @@ import logging
 import datetime
 from flask import Flask, render_template, url_for
 from . import views
-from . import parser
 
 logger = logging.getLogger(__name__)
 app = Flask(__name__)
