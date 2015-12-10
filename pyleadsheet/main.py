@@ -24,9 +24,8 @@ import os
 import sys
 import docopt
 import shutil
-from .server import run as start_server
-from .parser import parse_file
-from .renderer import HTMLRenderer, HTMLToPDFConverter
+from . import server
+from . import renderer
 import logging
 logger = logging.getLogger(__name__)
 
@@ -35,7 +34,7 @@ def runserver(args):
     if not os.path.isdir(args['<inputdir>']):
         logger.error('tried to start server with invalid input dir: ' + args['<inputdir>'])
         return 1
-    return start_server(args['<inputdir>'], debug=args['--debug'])
+    return server.run(args['<inputdir>'], debug=args['--debug'])
 
 
 def generate(args):
@@ -55,19 +54,19 @@ def generate(args):
     if args['--clean'] and os.path.isdir(outputdir):
         shutil.rmtree(outputdir)
 
-    renderer = HTMLRenderer(outputdir)
+    html_renderer = renderer.HTMLRenderer(outputdir)
     for yamlfile in inputfiles:
-        song_data = parse_file(yamlfile)
-        renderer.load_song(
-            song_data,
+        html_renderer.render_song(
+            yamlfile,
             transpose_half_steps=args['--transpose-half-steps'],
             transpose_to_root=args['--transpose-to-root']
         )
-    renderer.render_book(no_index=args['--no-index'])
+    if not args['--no-index']:
+        html_renderer.render_index
 
     if args['--pdf']:
-        converter = HTMLToPDFConverter(outputdir)
-        converter.convert_songs()
+        pdf_converter = renderer.HTMLToPDFConverter(outputdir)
+        pdf_converter.convert_songs()
 
     return 0
 

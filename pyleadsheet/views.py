@@ -1,5 +1,7 @@
 import os
 import logging
+import datetime
+import funcy
 from . import parser
 from . import constants
 from . import transposer
@@ -13,6 +15,18 @@ DURATION_UNIT_MULTIPLIERS = {
     constants.DURATION_UNIT_BEAT: 2,
     constants.DURATION_UNIT_HALFBEAT: 1
 }
+
+
+@funcy.memoize
+def _get_display_timestamp():
+    return datetime.datetime.now()
+
+
+def _with_universal_view_kwargs(view_kwargs):
+    view_kwargs.update({
+        'timestamp': _get_display_timestamp()
+    })
+    return view_kwargs
 
 
 def _get_sortable_title(title):
@@ -54,7 +68,7 @@ def compose_index_kwargs(filepaths):
         'songs_by_first_letter': songs_by_first_letter,
         'song_view_types': SONG_VIEW_TYPES
     }
-    return view_kwargs
+    return _with_universal_view_kwargs(view_kwargs)
 
 
 def _calculate_max_measures_per_row(condense_measures):
@@ -235,8 +249,8 @@ def _prepare_form_section_lyrics(form_section):
     if 'lyrics' not in form_section.keys():
         form_section['lyrics'] = form_section['lyrics_hint'] = ''
     else:
-        form_section['lyrics'] = _convert_linebreaks_to_html(form_section['lyrics'])
         form_section['lyrics_hint'] = _generate_text_snippet_hint(form_section['lyrics'])
+        form_section['lyrics'] = _convert_linebreaks_to_html(form_section['lyrics'])
 
 
 def compose_song_kwargs(filepath, song_view_type, transpose_half_steps, transpose_to_root):
@@ -257,9 +271,9 @@ def compose_song_kwargs(filepath, song_view_type, transpose_half_steps, transpos
         )
     for form_section in song_data['form']:
         _prepare_form_section_lyrics(form_section)
-    return {
+    return _with_universal_view_kwargs({
         'song': song_data,
         'num_subdivisions': song_data['multipliers'][constants.DURATION_UNIT_MEASURE],
         'render_leadsheet': song_view_type in ('complete', 'leadsheet'),
         'render_lyrics': song_view_type in ('complete', 'lyrics')
-    }
+    })
