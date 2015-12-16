@@ -9,7 +9,7 @@ from . import transposer
 logger = logging.getLogger(__name__)
 
 SONG_VIEW_TYPES = ['complete', 'leadsheet', 'lyrics']
-MAX_MEASURES_PER_ROW = 4
+DEFAULT_MEASURES_PER_ROW = 4
 DURATION_UNIT_MULTIPLIERS = {
     constants.DURATION_UNIT_MEASURE: 8,
     constants.DURATION_UNIT_BEAT: 2,
@@ -19,10 +19,21 @@ DURATION_UNIT_MULTIPLIERS = {
 
 @funcy.memoize
 def _get_display_timestamp():
-    return datetime.datetime.now()
+    """Doctest:
+    >>> ts_str = _get_display_timestamp()
+    >>> ts_dt = datetime.datetime.strptime(ts_str, '%c')
+    >>> type(ts_dt)
+    datetime.datetime
+    """
+    return datetime.datetime.now().strftime('%c')
 
 
 def _with_universal_view_kwargs(view_kwargs):
+    """Doctest:
+    >>> vk = _with_universal_view_kwargs({})
+    >>> vk.has_key('timestamp')
+    True
+    """
     view_kwargs.update({
         'timestamp': _get_display_timestamp()
     })
@@ -78,7 +89,7 @@ def _calculate_max_measures_per_row(condense_measures):
     >>> _calculate_max_measures_per_row(True)
     8
     """
-    max_measures_per_row = MAX_MEASURES_PER_ROW
+    max_measures_per_row = DEFAULT_MEASURES_PER_ROW
     if condense_measures:
         max_measures_per_row *= 2
     return max_measures_per_row
