@@ -23,7 +23,7 @@ def _get_display_timestamp():
     >>> ts_str = _get_display_timestamp()
     >>> ts_dt = datetime.datetime.strptime(ts_str, '%c')
     >>> type(ts_dt)
-    datetime.datetime
+    <type 'datetime.datetime'>
     """
     return datetime.datetime.now().strftime('%c')
 
@@ -249,10 +249,10 @@ def _generate_text_snippet_hint(text_snippet):
     ... of short
     ... lines''')
     'i am a series...'
-    >>> _generate_text_snippet_hint('i am a very long line, rather longer than '
-                                    'i might need to be -- so long, in fact, '
+    >>> _generate_text_snippet_hint('i am a very long line, rather longer than ' + \
+                                    'i might need to be -- so long, in fact, ' + \
                                     'that i need to be split to not trip pep8')
-    'i am a very long line, rather longer than i might ...'
+    'i am a very long line, rather longer than i might...'
     """
     lines = text_snippet.splitlines()
     if len(lines) == 1 and len(lines[0]) < 50:
