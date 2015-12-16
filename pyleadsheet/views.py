@@ -156,7 +156,11 @@ def _convert_progression_data(progression_data, multipliers, transpose):
             if datum['arg'] == constants.ARG_ROW_BREAK:
                 measures[-1]['args'].append(constants.ARG_ROW_BREAK)
         elif 'group' in datum.keys():
-            group_measures = _convert_progression_data(datum['progression'], multipliers, transpose)
+            group_measures = _convert_progression_data(
+                datum['progression'],
+                multipliers,
+                transpose
+            )
             if datum['group'] == 'repeat':
                 group_measures[0]['start_bar'] = constants.BAR_REPEAT_OPEN
                 group_measures[-1]['end_bar'] = constants.BAR_REPEAT_CLOSE
@@ -200,7 +204,10 @@ def _make_rows(progression_data, multipliers, max_measures, transpose):
         if (
             i == 0 or
             i - lastbreak == max_measures or
-            measures[i-1]['end_bar'] in (constants.BAR_REPEAT_CLOSE, constants.BAR_SECTION_CLOSE) or
+            measures[i-1]['end_bar'] in (
+                constants.BAR_REPEAT_CLOSE,
+                constants.BAR_SECTION_CLOSE
+            ) or
             constants.ARG_ROW_BREAK in measures[i-1]['args']
         ):
             rows.append([])
