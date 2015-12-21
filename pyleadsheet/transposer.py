@@ -99,11 +99,10 @@ def _lookup_from_key(key):
     True
     >>> _lookup_from_key('C#-') == SHARPS
     True
-    >>> try:
-    ...    _lookup_from_key('Ab-')
-    ... except ValueError as e:
-    ...     'is not a realistic key' in e.message
-    True
+    >>> _lookup_from_key('Ab-')  # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+        ...
+    ValueError: Ab- is not a realistic key...
     """
     major_key = _get_relative_major(key)
     ret = _lookup_from_note(major_key)

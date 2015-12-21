@@ -19,20 +19,31 @@ DURATION_UNIT_MULTIPLIERS = {
 
 @funcy.memoize
 def _get_display_timestamp():
-    """Doctest:
-    >>> ts_str = _get_display_timestamp()
-    >>> ts_dt = datetime.datetime.strptime(ts_str, '%c')
-    >>> type(ts_dt)
-    <type 'datetime.datetime'>
+    """ Get a timestamp which is formatted for display.  Memoize for reuse
+
+    .. doctests ::
+
+        >>> ts_str = _get_display_timestamp()
+        >>> ts_dt = datetime.datetime.strptime(ts_str, '%c')
+        >>> type(ts_dt) == type(datetime.datetime.now())
+        True
+
+    :rtype: string
     """
     return datetime.datetime.now().strftime('%c')
 
 
 def _with_universal_view_kwargs(view_kwargs):
-    """Doctest:
-    >>> vk = _with_universal_view_kwargs({})
-    >>> vk.has_key('timestamp')
-    True
+    """ Supplement view_kwargs with items that are required in all views
+
+    .. doctests ::
+
+        >>> vk = _with_universal_view_kwargs({})
+        >>> 'timestamp' in vk.keys()
+        True
+
+    :param view_kwargs: dict of objects which are needed to render a view
+    :rtype: dict
     """
     view_kwargs.update({
         'timestamp': _get_display_timestamp()
@@ -41,17 +52,23 @@ def _with_universal_view_kwargs(view_kwargs):
 
 
 def _get_sortable_title(title):
-    """Doctest:
-    >>> _get_sortable_title('Homeward Bound')
-    'Homeward Bound'
-    >>> _get_sortable_title('The Onion Strikes Again')
-    'Onion Strikes Again'
-    >>> _get_sortable_title('the lowercase')
-    'lowercase'
-    >>> _get_sortable_title('THE')
-    'THE'
-    >>> _get_sortable_title('Theoretically True')
-    'Theoretically True'
+    """ Get a version of a song title which fits it in a sort function (eg. ignore "the")
+
+    .. doctests ::
+
+        >>> _get_sortable_title('Homeward Bound')
+        'Homeward Bound'
+        >>> _get_sortable_title('The Onion Strikes Again')
+        'Onion Strikes Again'
+        >>> _get_sortable_title('the lowercase')
+        'lowercase'
+        >>> _get_sortable_title('THE')
+        'THE'
+        >>> _get_sortable_title('Theoretically True')
+        'Theoretically True'
+
+    :param title: title to convert
+    :rtype: string
     """
     if title.lower().startswith('the '):
         title = ' '.join(title.split()[1:])
@@ -59,6 +76,11 @@ def _get_sortable_title(title):
 
 
 def compose_index_kwargs(filepaths):
+    """ Get a dict of objects needed to render a table of contents
+
+    :param filepaths:
+    :rtype: dict
+    """
     songs_by_title = {}
     for path in filepaths:
         title = parser.get_title_from_song_file(path)
@@ -83,11 +105,17 @@ def compose_index_kwargs(filepaths):
 
 
 def _calculate_max_measures_per_row(condense_measures):
-    """Doctest:
-    >>> _calculate_max_measures_per_row(False)
-    4
-    >>> _calculate_max_measures_per_row(True)
-    8
+    """ Figure out how many measures will fit on displayed row given a "condense" directive
+
+    .. doctests ::
+
+        >>> _calculate_max_measures_per_row(False)
+        4
+        >>> _calculate_max_measures_per_row(True)
+        8
+
+    :param condense_measures: boolean directive to cut the measure width in half
+    :rtype: int
     """
     max_measures_per_row = DEFAULT_MEASURES_PER_ROW
     if condense_measures:
@@ -100,24 +128,32 @@ def _add_max_measures_per_row_to_song_data(song_data):
     song_data['max_measures_per_row'] = _calculate_max_measures_per_row(condense_measures)
 
 
-def _calculate_duration_unit_measure(time_signature_count, time_signature_unit):
-    """Doctest:
-    >>> _calculate_duration_unit_measure(4, 4)
-    8
-    >>> _calculate_duration_unit_measure(7, 4)
-    14
-    >>> _calculate_duration_unit_measure(3, 4)
-    6
-    >>> _calculate_duration_unit_measure(6, 8)
-    6
+def _calculate_duration_unit_measure(time_signature):
+    """ Figure out how many available "nodes" there are in every measure given an instance
+        of objects.TimeSignature
+
+    .. doctests ::
+
+        >>> from .objects import TimeSignature
+        >>> _calculate_duration_unit_measure(TimeSignature(4, 4))
+        8
+        >>> _calculate_duration_unit_measure(TimeSignature(7, 4))
+        14
+        >>> _calculate_duration_unit_measure(TimeSignature(3, 4))
+        6
+        >>> _calculate_duration_unit_measure(TimeSignature(6, 8))
+        6
+
+    :param time_signature: instance of objects.TimeSignature
+    :rtype: int
     """
     default_units_per_measure = DURATION_UNIT_MULTIPLIERS[constants.DURATION_UNIT_MEASURE]
-    new_unit_multiplier = 1.0 / (float(time_signature_unit) / default_units_per_measure)
-    return int(time_signature_count * new_unit_multiplier)
+    new_unit_multiplier = 1.0 / (float(time_signature.unit) / default_units_per_measure)
+    return int(time_signature.count * new_unit_multiplier)
 
 
 def _add_multipliers_to_song_data(song_data):
-    dum = _calculate_duration_unit_measure(song_data['time']['count'], song_data['time']['unit'])
+    dum = _calculate_duration_unit_measure(song_data['time'])
     song_data['multipliers'] = DURATION_UNIT_MULTIPLIERS.copy()
     song_data['multipliers'][constants.DURATION_UNIT_MEASURE] = dum
 
@@ -185,7 +221,7 @@ def _convert_progression_data(progression_data, multipliers, transpose):
                 transpose['method'](datum['chord'], transpose['key'], transpose['value'])
             subdivisions = 0
             for duration_part in datum['duration']:
-                subdivisions += duration_part['number'] * multipliers[duration_part['unit']]
+                subdivisions += duration_part.count * multipliers[duration_part.unit]
             for i in range(subdivisions):
                 if cursor % multipliers[constants.DURATION_UNIT_MEASURE] == 0:
                     measures.append({
