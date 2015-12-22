@@ -4,6 +4,7 @@ import datetime
 import funcy
 from . import parser
 from . import constants
+from . import models
 from . import transposer
 
 logger = logging.getLogger(__name__)
@@ -176,7 +177,7 @@ def _calculate_transposition(song_data, transpose_half_steps, transpose_to_root)
 
 
 def _clean_last_chord(measures):
-    last_chord = measures[-1]['subdivisions'][-1]
+    last_chord = measures[-1][-1]
     if last_chord == '':
         return
     last_last_chord = ''
@@ -184,7 +185,7 @@ def _clean_last_chord(measures):
     reverse_measure_i = -1
     while last_last_chord == '' and abs(reverse_measure_i) <= len(measures):
         try:
-            last_last_chord = measures[reverse_measure_i]['subdivisions'][reverse_subdivision_i]
+            last_last_chord = measures[reverse_measure_i][reverse_subdivision_i]
         except IndexError:
             if reverse_subdivision_i == -1:
                 break
@@ -192,7 +193,7 @@ def _clean_last_chord(measures):
             reverse_subdivision_i = -1
         reverse_subdivision_i -= 1
     if last_chord == last_last_chord:
-        measures[-1]['subdivisions'][-1] = ''
+        measures[-1][-1] = ''
 
 
 def _convert_progression_data(progression_data, multipliers, transpose):
@@ -201,7 +202,7 @@ def _convert_progression_data(progression_data, multipliers, transpose):
     for datum in progression_data:
         if 'arg' in datum.keys():
             if datum['arg'] == constants.ARG_ROW_BREAK:
-                measures[-1]['args'].append(constants.ARG_ROW_BREAK)
+                measures[-1].args.append(constants.ARG_ROW_BREAK)
         elif 'group' in datum.keys():
             group_measures = _convert_progression_data(
                 datum['progression'],
@@ -209,12 +210,12 @@ def _convert_progression_data(progression_data, multipliers, transpose):
                 transpose
             )
             if datum['group'] == 'repeat':
-                group_measures[0]['start_bar'] = constants.BAR_REPEAT_OPEN
-                group_measures[-1]['end_bar'] = constants.BAR_REPEAT_CLOSE
-                group_measures[-1]['end_note'] = datum['note'] if datum['note'] else ''
+                group_measures[0].start_bar = constants.BAR_REPEAT_OPEN
+                group_measures[-1].end_bar = constants.BAR_REPEAT_CLOSE
+                group_measures[-1].end_note = datum['note'] if datum['note'] else ''
             else:
-                group_measures[0]['start_bar'] = constants.BAR_DOUBLE
-                group_measures[0]['start_note'] = datum['note'] if datum['note'] else ''
+                group_measures[0].start_bar = constants.BAR_DOUBLE
+                group_measures[0].start_note = datum['note'] if datum['note'] else ''
             measures += group_measures
         elif 'chord' in datum.keys():
             if transpose:
@@ -224,22 +225,20 @@ def _convert_progression_data(progression_data, multipliers, transpose):
                 subdivisions += duration_part.count * multipliers[duration_part.unit]
             for i in range(subdivisions):
                 if cursor % multipliers[constants.DURATION_UNIT_MEASURE] == 0:
-                    measures.append({
-                        'args': [],
-                        'start_bar': constants.BAR_SINGLE,
-                        'end_bar': constants.BAR_SINGLE,
-                        'subdivisions': [datum['chord']]
-                    })
+                    measures.append(models.Measure(
+                        multipliers[constants.DURATION_UNIT_MEASURE],
+                        datum['chord']
+                    ))
                 elif i == 0:
                     _clean_last_chord(measures)
-                    measures[-1]['subdivisions'].append(datum['chord'])
+                    measures[-1].set_next_subdivision(datum['chord'])
                 else:
-                    measures[-1]['subdivisions'].append('')
+                    measures[-1].set_next_subdivision('')
                 cursor += 1
-    if measures[0]['start_bar'] < constants.BAR_SECTION_OPEN:
-        measures[0]['start_bar'] = constants.BAR_SECTION_OPEN
-    if measures[-1]['end_bar'] < constants.BAR_SECTION_CLOSE:
-        measures[-1]['end_bar'] = constants.BAR_SECTION_CLOSE
+    if measures[0].start_bar < constants.BAR_SECTION_OPEN:
+        measures[0].start_bar = constants.BAR_SECTION_OPEN
+    if measures[-1].end_bar < constants.BAR_SECTION_CLOSE:
+        measures[-1].end_bar = constants.BAR_SECTION_CLOSE
     return measures
 
 
@@ -251,11 +250,11 @@ def _make_rows(progression_data, multipliers, max_measures, transpose):
         if (
             i == 0 or
             i - lastbreak == max_measures or
-            measures[i-1]['end_bar'] in (
+            measures[i-1].end_bar in (
                 constants.BAR_REPEAT_CLOSE,
                 constants.BAR_SECTION_CLOSE
             ) or
-            constants.ARG_ROW_BREAK in measures[i-1]['args']
+            constants.ARG_ROW_BREAK in measures[i-1].args
         ):
             rows.append([])
             lastbreak = i
@@ -264,31 +263,37 @@ def _make_rows(progression_data, multipliers, max_measures, transpose):
 
 
 def _convert_linebreaks_to_html(text_snippet):
-    """Doctest:
-    >>> _convert_linebreaks_to_html('i am a single line string')
-    'i am a single line string'
-    >>> _convert_linebreaks_to_html('''i am a
-    ... multiline
-    ...
-    ... string''')
-    'i am a<br />multiline<br /><br />string'
+    """ Take a text snippet and turn all line breaks into <br /> tags
+
+    .. doctests ::
+
+        >>> _convert_linebreaks_to_html('i am a single line string')
+        'i am a single line string'
+        >>> _convert_linebreaks_to_html('''i am a
+        ... multiline
+        ...
+        ... string''')
+        'i am a<br />multiline<br /><br />string'
     """
     lines = text_snippet.splitlines()
     return '<br />'.join(lines)
 
 
 def _generate_text_snippet_hint(text_snippet):
-    """Doctest:
-    >>> _generate_text_snippet_hint('i am a short snippet')
-    'i am a short snippet'
-    >>> _generate_text_snippet_hint('''i am a series
-    ... of short
-    ... lines''')
-    'i am a series...'
-    >>> _generate_text_snippet_hint('i am a very long line, rather longer than ' + \
-                                    'i might need to be -- so long, in fact, ' + \
-                                    'that i need to be split to not trip pep8')
-    'i am a very long line, rather longer than i might...'
+    """ Take a text snippet and generate a string of length <52 as a hint
+
+    .. doctests ::
+
+        >>> _generate_text_snippet_hint('i am a short snippet')
+        'i am a short snippet'
+        >>> _generate_text_snippet_hint('''i am a series
+        ... of short
+        ... lines''')
+        'i am a series...'
+        >>> _generate_text_snippet_hint('i am a very long line, rather longer than ' + \
+                                        'i might need to be -- so long, in fact, ' + \
+                                        'that i need to be split to not trip pep8')
+        'i am a very long line, rather longer than i might...'
     """
     lines = text_snippet.splitlines()
     if len(lines) == 1 and len(lines[0]) < 50:
