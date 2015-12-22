@@ -409,12 +409,12 @@ def _parse_time_signature_string(time_signature_str):
 
 
 def _process_time_signature(song_data):
-    if song_data['time']:
+    if 'time' in song_data.keys():
         song_data['time'] = _parse_time_signature_string(song_data['time'])
 
 
 def _process_key(song_data):
-    if song_data['key']:
+    if 'key' in song_data.keys():
         song_data['key'] = objects.Key(song_data['key'])
 
 
