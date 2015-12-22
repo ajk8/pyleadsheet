@@ -90,6 +90,29 @@ class Note(MusicStr):
         content = content.capitalize()
         return str.__new__(cls, content)
 
+    @classmethod
+    def split_str(cls, content):
+        """ Split a string into a Note object and a string containing the remainder
+
+        .. doctests ::
+
+            >>> Note.split_str('C#asdf')
+            (Note(C#), 'asdf')
+            >>> Note.split_str('')  # doctest: +ELLIPSIS
+            Traceback (most recent call last):
+                ...
+            ValueError: "" is not a valid...
+        """
+        if len(content) == 1:
+            return cls(content), ''
+        try:
+            ret = cls(content[:2])
+            remainder = content[2:]
+        except ValueError:
+            ret = Note(content[:1])
+            remainder = content[1:]
+        return ret, remainder
+
 
 class Chord(object):
 
@@ -121,19 +144,8 @@ class Chord(object):
         """
 
         self._content = content
-        self.root = self.spec = self.base = ''
-
-        if len(content) == 1:
-            self.root = Note(content)
-            return
-
-        try:
-            self.root = Note(content[:2])
-            remainder = content[2:]
-        except ValueError:
-            self.root = Note(content[0])
-            remainder = content[1:]
-
+        self.spec = self.base = ''
+        self.root, remainder = Note.split_str(content)
         if not remainder:
             return
 
@@ -148,12 +160,66 @@ class Chord(object):
             self.base = Note(tokens[1])
         self.spec = MusicStr(tokens[0])
 
+    def _stitch_content(self):
+        ret = self.root + self.spec
+        if self.base:
+            ret = '/'.join((ret, self.base))
+        return ret
+
     def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__, self._content)
+        return '{}({})'.format(
+            self.__class__.__name__, MusicStr.from_unicode(self._stitch_content())
+        )
 
     def __str__(self):
-        return MusicStr.to_unicode(self._content)
+        return MusicStr.to_unicode(self._stitch_content())
 
+
+Mode = namedtuple('Mode', ['name', 'step', 'shorthand'])
+
+
+class Key(MusicStr):
+
+    valid_modes = [
+        Mode('Major', 1, ['']),
+        Mode('Minor', 6, ['-'])
+    ]
+
+    def __init__(self, content):
+        """ Validate and create
+
+        .. doctests ::
+
+            >>> Key('C-')
+            Key(C-)
+            >>> Key('C#notamode')  # doctest: +ELLIPSIS
+            Traceback (most recent call last):
+                ...
+            ValueError: did not recognize mode...
+            >>> key = Key('G')
+            >>> key.mode.name
+            'Major'
+            >>> key.root = 'A'
+            >>> str(key)
+            'A'
+        """
+        self._content = self.from_unicode(content)
+        self.root, remainder = Note.split_str(content)
+        self.mode = None
+        for mode in self.__class__.valid_modes:
+            if remainder in mode.shorthand:
+                self.mode = mode
+        if self.mode is None:
+            raise ValueError('did not recognize mode of key "{}" ({})'.format(content, remainder))
+
+    def _stitch_content(self):
+        return self.root + self.mode.shorthand[0]
+
+    def __repr__(self):
+        return '{}({})'.format(self.__class__.__name__, self.from_unicode(self._stitch_content()))
+
+    def __str__(self):
+        return self.to_unicode(self._stitch_content())
 
 # class Measure(object):
 #     def __init__(self, time_signature):

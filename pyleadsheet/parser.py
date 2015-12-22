@@ -413,6 +413,11 @@ def _process_time_signature(song_data):
         song_data['time'] = _parse_time_signature_string(song_data['time'])
 
 
+def _process_key(song_data):
+    if song_data['key']:
+        song_data['key'] = objects.Key(song_data['key'])
+
+
 def parse(yaml_str):
     song_data = yaml.load(yaml_str)
     logger.debug('parsing input for song: ' + song_data['title'])
@@ -420,6 +425,7 @@ def parse(yaml_str):
     _process_progression_chords(song_data)
     _process_comments(song_data)
     _process_time_signature(song_data)
+    _process_key(song_data)
     return song_data
 
 
