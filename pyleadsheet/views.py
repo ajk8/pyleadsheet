@@ -134,7 +134,7 @@ def _calculate_duration_unit_measure(time_signature):
 
     .. doctests ::
 
-        >>> from .objects import TimeSignature
+        >>> from .models import TimeSignature
         >>> _calculate_duration_unit_measure(TimeSignature(4, 4))
         8
         >>> _calculate_duration_unit_measure(TimeSignature(7, 4))

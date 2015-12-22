@@ -221,6 +221,7 @@ class Key(MusicStr):
     def __str__(self):
         return self.to_unicode(self._stitch_content())
 
+
 # class Measure(object):
 #     def __init__(self, time_signature):
 #         self.start_bar = self.end_bar = constants.BAR_SINGLE

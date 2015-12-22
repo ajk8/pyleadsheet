@@ -2,7 +2,7 @@ import os
 import yaml
 import funcy
 import re
-from . import objects
+from . import models
 from . import constants
 
 import logging
@@ -198,16 +198,16 @@ def _parse_chord(progression_substr):
         if chord_content.startswith('?'):
             chord_def['optional'] = True
             chord_content = chord_content[1:]
-        chord_def['chord'] = objects.Chord(chord_content)
+        chord_def['chord'] = models.Chord(chord_content)
     if len(tokens) == 1:
-        chord_def['duration'].append(objects.ChordDuration(1, constants.DURATION_UNIT_MEASURE))
+        chord_def['duration'].append(models.ChordDuration(1, constants.DURATION_UNIT_MEASURE))
     else:
         for number, unit in funcy.re_all(r'([\d\.]+)([{0}{1}{2}])'.format(
             constants.DURATION_UNIT_MEASURE,
             constants.DURATION_UNIT_BEAT,
             constants.DURATION_UNIT_HALFBEAT
         ), tokens[1]):
-            chord_def['duration'].append(objects.ChordDuration(int(number), unit))
+            chord_def['duration'].append(models.ChordDuration(int(number), unit))
     return chord_def, end_i
 
 
@@ -376,7 +376,7 @@ def _process_comments(song_data):
 
 
 def _parse_time_signature_string(time_signature_str):
-    """ Take in a string representation of a time signature and return an objects.TimeSignature
+    """ Take in a string representation of a time signature and return an models.TimeSignature
 
     .. doctests ::
 
@@ -396,7 +396,7 @@ def _parse_time_signature_string(time_signature_str):
         TimeSignature(count=4, unit=4)
 
     :param time_signature_str: string representation of a time signature
-    :rtype: objects.TimeSignature
+    :rtype: models.TimeSignature
     :raises: ValueError
     """
     tokens = funcy.re_find(r'^(\d+)/([48])$', time_signature_str)
@@ -405,7 +405,7 @@ def _parse_time_signature_string(time_signature_str):
                          'only 4 and 8 supported as units')
     if int(tokens[0]) < 1:
         raise ValueError('bad time signature, cannot have a count of 0')
-    return objects.TimeSignature(int(tokens[0]), int(tokens[1]))
+    return models.TimeSignature(int(tokens[0]), int(tokens[1]))
 
 
 def _process_time_signature(song_data):
@@ -415,7 +415,7 @@ def _process_time_signature(song_data):
 
 def _process_key(song_data):
     if 'key' in song_data.keys():
-        song_data['key'] = objects.Key(song_data['key'])
+        song_data['key'] = models.Key(song_data['key'])
 
 
 def parse(yaml_str):
