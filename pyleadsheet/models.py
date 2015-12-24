@@ -176,6 +176,113 @@ class Chord(object):
         return MusicStr.to_unicode(self._stitch_content())
 
 
+class Interval(object):
+    """ Class representing a musical interval
+
+    .. doctests ::
+
+        >>> i1 = Interval(2, constants.MINOR)
+        >>> i1
+        Interval(minor 2)
+        >>> i1.half_steps
+        1
+        >>> i2 = Interval.from_half_steps(1)
+        >>> i1 == i2
+        True
+        >>> i3 = Interval(0, 'notreal')  # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+            ...
+        ValueError: unsupported interval number: 0
+        >>> i3 = Interval(6, 'notreal')  # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+            ...
+        ValueError: unsupported interval modifier: 'notreal'
+        >>> i3 = Interval(6, constants.MAJOR)
+        >>> i3 != i2
+        True
+        >>> i3 > i2
+        True
+        >>> i2 < i3
+        True
+        >>> i1 + i2
+        Interval(major 2)
+        >>> i3 - i1
+        Interval(minor 6)
+    """
+    _half_step_map = [
+        [('unison', constants.PERFECT)],
+        [(2, constants.MINOR)],
+        [(2, constants.MAJOR)],
+        [(3, constants.MINOR)],
+        [(3, constants.MAJOR)],
+        [(4, constants.PERFECT)],
+        [(4, constants.AUGMENTED), (5, constants.DIMINISHED)],
+        [(5, constants.PERFECT)],
+        [(6, constants.MINOR)],
+        [(6, constants.MAJOR)],
+        [(7, constants.MINOR)],
+        [(7, constants.MAJOR)],
+    ]
+
+    def __init__(self, number, modifier):
+        number = int(number)
+        if number < 2 or number > 7:
+            raise ValueError('unsupported interval number: ' + str(number))
+        self.number = number
+        supported_modifier = False
+        for key in constants.MODIFIER_DISPLAY.keys():
+            if modifier == key:
+                supported_modifier = True
+        if not supported_modifier:
+            raise ValueError('unsupported interval modifier: ' + repr(modifier))
+        self.modifier = modifier
+
+    def __repr__(self):
+        return '{}({} {})'.format(
+            self.__class__.__name__, constants.MODIFIER_DISPLAY[self.modifier]['long'], self.number
+        )
+
+    @classmethod
+    def from_half_steps(cls, half_steps):
+        if half_steps < 1 or half_steps > 11:
+            raise ValueError('could not determine interval of {} half steps'.format(half_steps))
+        return cls(*cls._half_step_map[half_steps][0])
+
+    @property
+    def half_steps(self):
+        for i in range(len(self._half_step_map)):
+            for mapping in self._half_step_map[i]:
+                if mapping[0] == self.number and mapping[1] == self.modifier:
+                    return i
+        raise ValueError('could not determine half steps based on interval ' + repr(self))
+
+    def __eq__(self, other):
+        if self.number == other.number and self.modifier == other.modifier:
+            return True
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __gt__(self, other):
+        if self.number > other.number:
+            return True
+        elif self.number == other.number and self.modifier > other.modifier:
+            return True
+        return False
+
+    def __lt__(self, other):
+        if not self.__eq__(other) and not self.__gt__(other):
+            return True
+        return False
+
+    def __add__(self, other):
+        return self.__class__.from_half_steps(self.half_steps + other.half_steps)
+
+    def __sub__(self, other):
+        return self.__class__.from_half_steps(self.half_steps - other.half_steps)
+
+
 Mode = collections.namedtuple('Mode', ['name', 'step', 'shorthand'])
 
 

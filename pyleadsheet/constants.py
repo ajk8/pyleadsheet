@@ -1,3 +1,5 @@
+import collections
+
 DURATION_UNIT_MEASURE = 'm'
 DURATION_UNIT_BEAT = 'b'
 DURATION_UNIT_HALFBEAT = 'h'
@@ -15,3 +17,42 @@ FLAT = '&#9837;'
 SHARP = '&#9839;'
 
 ARG_ROW_BREAK = '/'
+
+DIMINISHED = 1
+MINOR = 2
+PERFECT = 3
+MAJOR = 4
+AUGMENTED = 5
+# ModifierDisplay = collections.namedtuple('ModifierDisplay', ('symbol', 'char', 'short', 'long'))
+MODIFIER_DISPLAY = {
+    MAJOR: collections.OrderedDict({
+        'symbol': None,
+        'char': 'M',
+        'short': 'maj',
+        'long': 'major'
+    }),
+    MINOR: collections.OrderedDict({
+        'symbol': '-',
+        'char': 'm',
+        'short': 'min',
+        'long': 'minor'
+    }),
+    DIMINISHED: collections.OrderedDict({
+        'symbol': '⚪',
+        'char': None,
+        'short': 'dim',
+        'long': 'diminished'
+    }),
+    AUGMENTED: collections.OrderedDict({
+        'symbol': '+',
+        'char': None,
+        'short': 'aug',
+        'long': 'augmented'
+    }),
+    PERFECT: collections.OrderedDict({
+        'symbol': None,
+        'char': None,
+        'short': None,
+        'long': 'perfect'
+    })
+}
