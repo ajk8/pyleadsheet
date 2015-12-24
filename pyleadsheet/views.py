@@ -312,6 +312,67 @@ def _prepare_form_section_lyrics(form_section):
         form_section['lyrics'] = _convert_linebreaks_to_html(form_section['lyrics'])
 
 
+def _prepend_global_comments(song_data):
+    """ Take any comments defined as part of a progression, and prepend them
+        to the comments of all form sections which refer to that progression
+
+    .. doctests ::
+
+        >>> song_data = {'progressions': [], 'form': []}
+        >>> song_data['progressions'].append({'name': 'a'})
+        >>> song_data['form'].append({'progression': 'a'})
+        >>> _prepend_global_comments(song_data)
+        >>> song_data['form'][0]['comment']  # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+            ...
+        KeyError: 'comment'
+        >>> song_data['progressions'][0]['comment'] = 'global'
+        >>> _prepend_global_comments(song_data)
+        >>> song_data['form'][0]['comment']
+        'global'
+        >>> song_data['form'][0]['comment'] = 'local'
+        >>> _prepend_global_comments(song_data)
+        >>> song_data['form'][0]['comment']
+        'global -- local'
+    """
+    for progression in song_data['progressions']:
+        if 'comment' in progression.keys():
+            for section in song_data['form']:
+                if section['progression'] == progression['name']:
+                    logger.debug('prepending progression comment')
+                    comment = progression['comment']
+                    if 'comment' in section.keys():
+                        comment += ' -- ' + section['comment']
+                    section['comment'] = comment
+
+
+def _prepend_continuation_comments(form_data):
+    """ Take any form sections which are marked as continuations and make
+        a note of it in the comment
+
+    .. doctests ::
+
+        >>> form_data = [{'progression': 'a'}, {}]
+        >>> _prepend_continuation_comments(form_data)
+        >>> form_data
+        [{'progression': 'a'}, {}]
+        >>> form_data[-1]['continuation'] = True
+        >>> _prepend_continuation_comments(form_data)
+        >>> form_data[-1]['comment']
+        'continuation of a'
+        >>> form_data[-1]['comment'] = 'comment'
+        >>> _prepend_continuation_comments(form_data)
+        >>> form_data[-1]['comment']
+        'continuation of a -- comment'
+    """
+    for i in range(len(form_data)):
+        if 'continuation' in form_data[i].keys():
+            comment = 'continuation of ' + form_data[i-1]['progression']
+            if 'comment' in form_data[i].keys():
+                comment += ' -- ' + form_data[i]['comment']
+            form_data[i]['comment'] = comment
+
+
 def compose_song_kwargs(filepath, song_view_type, transpose_half_steps, transpose_to_root):
     if not os.path.isfile(filepath):
         raise IOError('input file does not exist: ' + filepath)
@@ -330,6 +391,8 @@ def compose_song_kwargs(filepath, song_view_type, transpose_half_steps, transpos
         )
     for form_section in song_data['form']:
         _prepare_form_section_lyrics(form_section)
+    _prepend_global_comments(song_data)
+    _prepend_continuation_comments(song_data['form'])
     return _with_universal_view_kwargs({
         'song': song_data,
         'num_subdivisions': song_data['multipliers'][constants.DURATION_UNIT_MEASURE],

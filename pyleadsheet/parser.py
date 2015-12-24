@@ -357,24 +357,6 @@ def _process_progression_chords(song_data):
         progression['chords'] = _parse_progression_str(progression['chords'])
 
 
-def _process_comments(song_data):
-    for progression in song_data['progressions']:
-        if 'comment' in progression.keys():
-            for section in song_data['form']:
-                if section['progression'] == progression['name']:
-                    logger.debug('prepending progression comment')
-                    comment = progression['comment']
-                    if 'comment' in section.keys():
-                        comment += ' -- ' + section['comment']
-                    section['comment'] = comment
-    for i in range(len(song_data['form'])):
-        if 'continuation' in song_data['form'][i].keys():
-            comment = 'continuation of ' + song_data['form'][i-1]['progression']
-            if 'comment' in song_data['form'][i].keys():
-                comment += ' -- ' + song_data['form'][i]['comment']
-            song_data['form'][i]['comment'] = comment
-
-
 def _parse_time_signature_string(time_signature_str):
     """ Take in a string representation of a time signature and return an models.TimeSignature
 
@@ -423,7 +405,6 @@ def parse(yaml_str):
     logger.debug('parsing input for song: ' + song_data['title'])
     _validate_schema(song_data)
     _process_progression_chords(song_data)
-    _process_comments(song_data)
     _process_time_signature(song_data)
     _process_key(song_data)
     return song_data
