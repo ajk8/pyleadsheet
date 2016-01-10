@@ -5,6 +5,7 @@
         <title>{% block page_title %}{% endblock %} (pyleadsheet)</title>
         <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu">
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='pyleadsheet.css') }}" />
+        {% block extrahead %}{% endblock %}
     </head>
 
     <body>

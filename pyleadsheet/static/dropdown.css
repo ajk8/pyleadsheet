@@ -1,0 +1,39 @@
+.dropdown {
+    position: relative;
+    background-color: inherit;
+}
+
+.dropdown li {
+    position: relative;
+    background-color: inherit;
+    list-style: none;
+}
+
+.dropdown li:hover > ul {
+    display: block;
+}
+
+.dropdown a {
+    display: block;
+    padding-bottom: 0.3em;
+}
+
+.dropdown ul {
+    display: none;
+    position: absolute;
+    top: 0.3em;
+    padding-left: 1em;
+    padding-right: 1em;
+    text-align: center;
+    background-color: inherit;
+}
+
+.dropdown ul li {
+    float: none;
+}
+
+.dropdown ul a
+{
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+}

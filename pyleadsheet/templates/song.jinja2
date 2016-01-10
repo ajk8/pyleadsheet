@@ -2,16 +2,39 @@
 
 {% block page_title %}{{ song.title }}{% endblock %}
 
+{% block extrahead %}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='dropdown.css') }}" />
+{% endblock %}
+
 {% block content %}
 
     <div id="header_container" class="content_container">
-        <div id="song_title">{{ song.title }}</div>
-        {% if render_leadsheet %}
-            <div id="song_attributes">
-                {{ song.key }}, {{ song.time.count }}/{{ song.time.unit }}
-                {% if song.feel %}[{{ song.feel }}]{% endif %}
+        <div class="header_subcontainer">
+            <div class="header_link"><a href="/">Back to index</a></div>
+        </div>
+        <div class="header_subcontainer">
+            <div class="header_label">Title</div>
+            <div id="song_title">{{ song.title }}</div>
+            {% if render_leadsheet %}
+                <div class="header_label">Key</div>
+                <div class="song_attribute">{{ song.key }}</div>
+                <div class="header_label">Time</div>
+                <div class="song_attribute">{{ song.time.count }}/{{ song.time.unit }}</div>
+                <div class="header_label">Feel</div>
+                <div class="song_attribute">{{ song.feel }}</div>
+            {% endif %}
+        </div>
+        <div class="header_subcontainer">
+            <div class="header_link dropdown">
+                <li>
+                    <a href="#">Transpose</a>
+                    <ul>
+                        <li><a href="#">Ab</a></li>
+                        <li><a href="#">A</a></li>
+                    </ul>
+                </li>
             </div>
-        {% endif %}
+        </div>
     </div>
 
     {% if render_leadsheet %}
