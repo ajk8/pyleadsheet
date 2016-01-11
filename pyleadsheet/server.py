@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from . import views
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,8 @@ def _serve_index():
 @app.route('/song/<shortstr>/<song_view_type>', methods=['GET'])
 def _serve_song(shortstr, song_view_type):
     filepath = _shortstr_to_filepath(shortstr)
-    view_kwargs = views.compose_song_kwargs(filepath, song_view_type, 0, None)
+    transpose_root = request.args.get('transpose_root', None)
+    view_kwargs = views.compose_song_kwargs(filepath, song_view_type, 0, transpose_root)
     return render_template('song.jinja2', **view_kwargs)
 
 

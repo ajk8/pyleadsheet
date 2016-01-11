@@ -1,5 +1,6 @@
 import funcy
 import collections
+import string
 from . import constants
 
 TimeSignature = collections.namedtuple('TimeSignature', ['count', 'unit'])
@@ -82,6 +83,10 @@ class Note(MusicStr):
         ValueError: "H" is not a valid...
         >>> str(Note('bb'))
         'B♭'
+        >>> Note('Ab').lookup_list[-1]
+        Note(Ab)
+        >>> Note('C').lookup_list[-1]
+        Note(G#)
     """
 
     def __new__(cls, content):
@@ -113,6 +118,76 @@ class Note(MusicStr):
             ret = Note(content[:1])
             remainder = content[1:]
         return ret, remainder
+
+    @classmethod
+    def all(cls):
+        """ Return a list of all standard notes
+
+        .. doctests ::
+
+            >>> Note.all()  # doctest: +NORMALIZE_WHITESPACE
+            [Note(Ab), Note(A), Note(A#), Note(Bb), Note(B), Note(C), Note(C#), Note(Db), Note(D),
+             Note(D#), Note(Eb), Note(E), Note(F), Note(F#), Note(Gb), Note(G), Note(G#)]
+        """
+        all_notes = []
+        for letter in ('A', 'B', 'C', 'D', 'E', 'F', 'G'):
+            if letter not in ('C', 'F'):
+                all_notes.append(cls(letter + 'b'))
+            all_notes.append(cls(letter))
+            if letter not in ('B', 'E'):
+                all_notes.append(cls(letter + '#'))
+        return all_notes
+
+    @classmethod
+    def sharps(cls):
+        """ Return a chromatic scale of sharps, starting with A
+
+        .. doctests ::
+
+            >>> Note.sharps()  # doctest: +NORMALIZE_WHITESPACE
+            [Note(A), Note(A#), Note(B), Note(C), Note(C#), Note(D),
+             Note(D#), Note(E), Note(F), Note(F#), Note(G), Note(G#)]
+        """
+        sharps = []
+        for note in cls.all():
+            if 'b' not in note:
+                sharps.append(note)
+        return sharps
+
+    @classmethod
+    def flats(cls):
+        """ Return a chromatic scale of sharps, starting with A
+
+        .. doctests ::
+
+            >>> Note.flats()  # doctest: +NORMALIZE_WHITESPACE
+            [Note(A), Note(Bb), Note(B), Note(C), Note(Db), Note(D),
+             Note(Eb), Note(E), Note(F), Note(Gb), Note(G), Note(Ab)]
+        """
+        flats = []
+        for note in cls.all():
+            if '#' not in note:
+                flats.append(note)
+        flats.append(flats.pop(0))
+        return flats
+
+    @property
+    def lookup_list(self):
+        if 'b' in self or self == 'F':
+            return self.flats()
+        return self.sharps()
+
+    @property
+    def lookup_list_index(self):
+        for i in range(len(self.lookup_list)):
+            if self == self.lookup_list[i]:
+                return i
+
+    @property
+    def enharmonic_equal(self):
+        if self.sharps()[self.lookup_list_index] == self:
+            return self.flats()[self.lookup_list_index]
+        return self.sharps()[self.lookup_list_index]
 
 
 class Chord(object):
@@ -283,16 +358,100 @@ class Interval(object):
         return self.__class__.from_half_steps(self.half_steps - other.half_steps)
 
 
-Mode = collections.namedtuple('Mode', ['name', 'step', 'shorthand'])
+class Mode(object):
+    """ Class representing a specific mode which can be rooted at any note
+
+    .. doctests ::
+
+        >>> Mode([], [])  # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+            ...
+        ValueError: cannot instantiate a Mode with no half_steps_pattern
+        >>> Mode([2, 2], [])  # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+            ...
+        ValueError: cannot instantiate a Mode with no names
+        >>> Mode([2, 2], ['stuff'])
+        Mode(stuff)
+        >>> major = Mode.Major
+        >>> major
+        Mode(Major)
+        >>> ionian = Mode.Ionian
+        >>> ionian == major
+        True
+        >>> ionian != major
+        False
+        >>> minor = Mode.Minor
+        >>> ionian == minor
+        False
+        >>> ionian != minor
+        True
+    """
+
+    # this will get filled in below
+    _all_known_modes = []
+
+    def __init__(self, half_steps_pattern, names, shorthand=None, ionian_interval=None):
+        if not half_steps_pattern:
+            raise ValueError('cannot instantiate a Mode with no half_steps_pattern')
+        self.half_steps_pattern = half_steps_pattern
+        if not names:
+            raise ValueError('cannot instantiate a Mode with no names')
+        self.names = names
+        self.shorthand = shorthand or []
+        self.ionian_interval = ionian_interval
+
+    @property
+    def name(self):
+        return self.names[0]
+
+    @classmethod
+    def all(cls):
+        return cls._all_known_modes
+
+    def __repr__(self):
+        return '{}({})'.format(self.__class__.__name__, self.name)
+
+    def __eq__(self, other):
+        if self.half_steps_pattern == other.half_steps_pattern:
+            return True
+        return False
+
+    def __ne__(self, other):
+        if self.half_steps_pattern == other.half_steps_pattern:
+            return False
+        return True
 
 
-class Key(MusicStr):
+known_modes = (
+    ([2, 2, 1, 2, 2, 2, 1], ['Major', 'Ionian'], ['', 'M', 'maj'], 1),
+    ([2, 1, 2, 2, 2, 1, 2], ['Dorian'], [], 2),
+    ([1, 2, 2, 2, 1, 2, 2], ['Phrygian'], [], 3),
+    ([2, 2, 2, 1, 2, 2, 1], ['Lydian'], [], 4),
+    ([2, 2, 1, 2, 2, 1, 2], ['Mixolydian'], [], 5),
+    ([2, 1, 2, 2, 1, 2, 2], ['Minor', 'Aeolian', 'Natural Minor'], ['-', 'm', 'min'], 6),
+    ([1, 2, 2, 1, 2, 2, 2], ['Locrian'], [], 7)
+)
+for _pattern, _names, _shorthand, _interval in known_modes:
+    for _name in _names:
+        _property_name = _name.replace(' ', '_')
+        setattr(Mode, _property_name, Mode(_pattern, _names, _shorthand, _interval))
+        _mode_obj = getattr(Mode, _property_name)
+        if not Mode._all_known_modes or _mode_obj != Mode._all_known_modes[-1]:
+            Mode._all_known_modes.append(_mode_obj)
+
+
+class Key(object):
     """ Class representing a musical key
 
     .. doctests ::
 
-        >>> Key('C-')
-        Key(C-)
+        >>> cmin = Key('C-')
+        >>> cmin.relative_major
+        Key(Eb)
+        >>> cloc = Key('C', mode=Mode.Locrian)
+        >>> cloc.relative_minor
+        Key(Bb-)
         >>> Key('C#notamode')  # doctest: +ELLIPSIS
         Traceback (most recent call last):
             ...
@@ -303,31 +462,94 @@ class Key(MusicStr):
         >>> key.root = 'A'
         >>> str(key)
         'A'
+        >>> Key('G').to_root('D')
+        Key(D)
     """
 
-    valid_modes = [
-        Mode('Major', 1, ['']),
-        Mode('Minor', 6, ['-'])
-    ]
-
-    def __init__(self, content):
-        self._content = self.from_unicode(content)
+    def __init__(self, content, mode=None):
+        self._content = MusicStr.from_unicode(content)
         self.root, remainder = Note.split_str(content)
-        self.mode = None
-        for mode in self.__class__.valid_modes:
-            if remainder in mode.shorthand:
-                self.mode = mode
-        if self.mode is None:
-            raise ValueError('did not recognize mode of key "{}" ({})'.format(content, remainder))
+        if remainder and mode:
+            raise ValueError('could not construct key "{}" with mode "{}"'.format(content, mode))
+        elif not mode:
+            self.mode = None
+            for mode in Mode.all():
+                if remainder in mode.shorthand:
+                    self.mode = mode
+            if self.mode is None:
+                raise ValueError('did not recognize mode of key "{}" ({})'.format(content, remainder))
+        else:
+            self.mode = mode
+
+        self.note_lookup_list = None
+        if self._validate_against_lookup_list(Note.sharps()):
+            self.note_lookup_list = Note.sharps()
+        elif self._validate_against_lookup_list(Note.flats()):
+            self.note_lookup_list = Note.flats()
+        if not self.note_lookup_list:
+            raise ValueError('{} is not a realistic key, try rooting at {}'.format(
+                self, self.root.enharmonic_equal
+            ))
+
+    def _validate_against_lookup_list(self, note_lookup_list):
+        current_note = self.root
+        next_note_i = self.root.lookup_list_index
+        for half_steps in self.mode.half_steps_pattern:
+            current_letter_i = string.ascii_uppercase.find(current_note[0])
+            next_note_i = (next_note_i + half_steps) % 12
+            next_note = note_lookup_list[next_note_i]
+            next_letter_i = string.ascii_uppercase.find(next_note[0])
+            if next_letter_i - current_letter_i not in (1, -6):
+                return False
+            current_note = next_note
+        return True
 
     def _stitch_content(self):
-        return self.root + self.mode.shorthand[0]
+        ret = self.root
+        if self.mode.shorthand:
+            ret += self.mode.shorthand[0]
+        else:
+            ret += ':' + self.mode.name
+        return ret
 
     def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__, self.from_unicode(self._stitch_content()))
+        return '{}({})'.format(self.__class__.__name__, MusicStr.from_unicode(self._stitch_content()))
 
     def __str__(self):
-        return self.to_unicode(self._stitch_content())
+        return MusicStr.to_unicode(self._stitch_content())
+
+    def to_root(self, new_root):
+        return Key(new_root, mode=self.mode)
+
+    @property
+    def relative_major(self):
+        if self.mode.ionian_interval is None:
+            raise AttributeError('{} does not have a relative major'.format(self))
+        diff = self.mode.ionian_interval - 1
+        half_steps = sum(Mode.Major.half_steps_pattern[:diff])
+        new_root = self.note_lookup_list[(self.root.lookup_list_index - half_steps) % 12]
+        return Key(new_root)
+
+    @property
+    def relative_minor(self):
+        if self.mode.ionian_interval is None:
+            raise AttributeError('{} does not have a relative minor'.format(self))
+        diff = 1 if self.mode.ionian_interval == 7 else self.mode.ionian_interval + 1
+        half_steps = sum(Mode.Minor.half_steps_pattern[:diff])
+        new_root = self.note_lookup_list[(self.root.lookup_list_index - half_steps) % 12]
+        return Key('{}-'.format(new_root))
+
+    @property
+    def transposable_roots(self):
+        ret = []
+        for root in Note.all():
+            try:
+                self.to_root(root)
+                ret.append(root)
+            except ValueError:
+                print(root)
+                pass
+        return ret
 
 
 class Measure(object):

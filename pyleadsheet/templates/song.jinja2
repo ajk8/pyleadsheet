@@ -25,15 +25,18 @@
             {% endif %}
         </div>
         <div class="header_subcontainer">
-            <div class="header_link dropdown">
-                <li>
-                    <a href="#">Transpose</a>
-                    <ul>
-                        <li><a href="#">Ab</a></li>
-                        <li><a href="#">A</a></li>
-                    </ul>
-                </li>
-            </div>
+            {% if render_leadsheet %}
+                <div class="header_link dropdown">
+                    <li>
+                        <a href="#">Transpose</a>
+                        <ul>
+                            {% for root in transpose_roots %}
+                                <li><a href="#?transpose_root={{ root }}">{{ root }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                </div>
+            {% endif %}
         </div>
     </div>
 

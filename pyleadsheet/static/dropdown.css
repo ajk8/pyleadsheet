@@ -26,6 +26,7 @@
     padding-right: 1em;
     text-align: center;
     background-color: inherit;
+    outline-color: #000;
 }
 
 .dropdown ul li {

@@ -397,5 +397,6 @@ def compose_song_kwargs(filepath, song_view_type, transpose_half_steps, transpos
         'song': song_data,
         'num_subdivisions': song_data['multipliers'][constants.DURATION_UNIT_MEASURE],
         'render_leadsheet': song_view_type in ('complete', 'leadsheet'),
-        'render_lyrics': song_view_type in ('complete', 'lyrics')
+        'render_lyrics': song_view_type in ('complete', 'lyrics'),
+        'transpose_roots': song_data['key'].transposable_roots
     })
