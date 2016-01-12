@@ -547,7 +547,6 @@ class Key(object):
                 self.to_root(root)
                 ret.append(root)
             except ValueError:
-                print(root)
                 pass
         return ret
 

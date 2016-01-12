@@ -39,7 +39,7 @@ def _serve_index():
 def _serve_song(shortstr, song_view_type):
     filepath = _shortstr_to_filepath(shortstr)
     transpose_root = request.args.get('transpose_root', None)
-    view_kwargs = views.compose_song_kwargs(filepath, song_view_type, 0, transpose_root)
+    view_kwargs = views.compose_song_kwargs(filepath, song_view_type, transpose_root)
     return render_template('song.jinja2', **view_kwargs)
 
 

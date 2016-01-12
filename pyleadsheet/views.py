@@ -159,23 +159,6 @@ def _add_multipliers_to_song_data(song_data):
     song_data['multipliers'][constants.DURATION_UNIT_MEASURE] = dum
 
 
-def _calculate_transposition(song_data, transpose_half_steps, transpose_to_root):
-    if transpose_half_steps:
-        song_data['transpose'] = {
-            'method': transposer.transpose_by_half_steps,
-            'key': song_data['key'],
-            'value': int(transpose_half_steps)
-        }
-    elif transpose_to_root:
-        song_data['transpose'] = {
-            'method': transposer.transpose_by_new_root,
-            'key': song_data['key'],
-            'value': transpose_to_root
-        }
-    else:
-        song_data['transpose'] = None
-
-
 def _clean_last_chord(measures):
     last_chord = measures[-1][-1]
     if last_chord == '':
@@ -196,7 +179,7 @@ def _clean_last_chord(measures):
         measures[-1][-1] = ''
 
 
-def _convert_progression_data(progression_data, multipliers, transpose):
+def _convert_progression_data(progression_data, multipliers):
     measures = []
     cursor = 0
     for datum in progression_data:
@@ -206,8 +189,7 @@ def _convert_progression_data(progression_data, multipliers, transpose):
         elif 'group' in datum.keys():
             group_measures = _convert_progression_data(
                 datum['progression'],
-                multipliers,
-                transpose
+                multipliers
             )
             if datum['group'] == 'repeat':
                 group_measures[0].start_bar = constants.BAR_REPEAT_OPEN
@@ -218,8 +200,6 @@ def _convert_progression_data(progression_data, multipliers, transpose):
                 group_measures[0].start_note = datum['note'] if datum['note'] else ''
             measures += group_measures
         elif 'chord' in datum.keys():
-            if transpose:
-                transpose['method'](datum['chord'], transpose['key'], transpose['value'])
             subdivisions = 0
             for duration_part in datum['duration']:
                 subdivisions += duration_part.count * multipliers[duration_part.unit]
@@ -242,8 +222,8 @@ def _convert_progression_data(progression_data, multipliers, transpose):
     return measures
 
 
-def _make_rows(progression_data, multipliers, max_measures, transpose):
-    measures = _convert_progression_data(progression_data, multipliers, transpose)
+def _make_rows(progression_data, multipliers, max_measures):
+    measures = _convert_progression_data(progression_data, multipliers)
     rows = []
     lastbreak = 0
     for i in range(len(measures)):
@@ -373,21 +353,21 @@ def _prepend_continuation_comments(form_data):
             form_data[i]['comment'] = comment
 
 
-def compose_song_kwargs(filepath, song_view_type, transpose_half_steps, transpose_to_root):
+def compose_song_kwargs(filepath, song_view_type, transpose_to_root=None):
     if not os.path.isfile(filepath):
         raise IOError('input file does not exist: ' + filepath)
     if song_view_type not in SONG_VIEW_TYPES:
         raise ValueError('invalid song view type: ' + song_view_type)
     song_data = parser.parse_file(filepath)
+    if transpose_to_root:
+        transposer.transpose_song_data_by_new_root(song_data, transpose_to_root)
     _add_multipliers_to_song_data(song_data)
     _add_max_measures_per_row_to_song_data(song_data)
-    _calculate_transposition(song_data, transpose_half_steps, transpose_to_root)
     for progression in song_data['progressions']:
         progression['rows'] = _make_rows(
             progression['chords'],
             song_data['multipliers'],
-            song_data['max_measures_per_row'],
-            song_data['transpose']
+            song_data['max_measures_per_row']
         )
     for form_section in song_data['form']:
         _prepare_form_section_lyrics(form_section)
