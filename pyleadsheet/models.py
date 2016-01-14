@@ -83,11 +83,20 @@ class Note(MusicStr):
         ValueError: "H" is not a valid...
         >>> str(Note('bb'))
         'B♭'
-        >>> Note('Ab').lookup_list[-1]
+        >>> Note('Ab').lookup_list[-1][0]
         Note(Ab)
-        >>> Note('C').lookup_list[-1]
+        >>> Note('C').lookup_list[-1][0]
         Note(G#)
     """
+
+    _chromatic_index_map = collections.OrderedDict([
+        ('A', 0), ('A#', 1), ('Bb', 1), ('B', 2), ('Cb', 2), ('B#', 3), ('C', 3),
+        ('C#', 4), ('Db', 4), ('D', 5), ('D#', 6), ('Eb', 6), ('E', 7), ('Fb', 7),
+        ('E#', 8), ('F', 8), ('F#', 9), ('Gb', 9), ('G', 10), ('G#', 11), ('Ab', 11)
+    ])
+    # _chromatic_index_map = collections.OrderedDict([
+    #     ('A', 0), ('B', 2), ('C', 3), ('D', 5), ('E', 7), ('F', 8), ('G', 10)
+    # ])
 
     def __new__(cls, content):
         content = cls.from_unicode(content)
@@ -120,23 +129,23 @@ class Note(MusicStr):
         return ret, remainder
 
     @classmethod
-    def all(cls):
-        """ Return a list of all standard notes
+    def all(cls, flatten=False):
+        """ Return a chromatic scale including all standard notes, starting with A
 
         .. doctests ::
 
             >>> Note.all()  # doctest: +NORMALIZE_WHITESPACE
-            [Note(Ab), Note(A), Note(A#), Note(Bb), Note(B), Note(C), Note(C#), Note(Db), Note(D),
-             Note(D#), Note(Eb), Note(E), Note(F), Note(F#), Note(Gb), Note(G), Note(G#)]
+            [[Note(A)], [Note(A#), Note(Bb)], [Note(B), Note(Cb)], [Note(B#), Note(C)],
+             [Note(C#), Note(Db)], [Note(D)], [Note(D#), Note(Eb)], [Note(E), Note(Fb)],
+             [Note(E#), Note(F)], [Note(F#), Note(Gb)], [Note(G)], [Note(G#), Note(Ab)]]
         """
-        all_notes = []
-        for letter in ('A', 'B', 'C', 'D', 'E', 'F', 'G'):
-            if letter not in ('C', 'F'):
-                all_notes.append(cls(letter + 'b'))
-            all_notes.append(cls(letter))
-            if letter not in ('B', 'E'):
-                all_notes.append(cls(letter + '#'))
-        return all_notes
+        ret = []
+        for note, index in cls._chromatic_index_map.items():
+            if len(ret) == index:
+                ret.append([cls(note)])
+            else:
+                ret[-1].append(cls(note))
+        return ret
 
     @classmethod
     def sharps(cls):
@@ -145,31 +154,36 @@ class Note(MusicStr):
         .. doctests ::
 
             >>> Note.sharps()  # doctest: +NORMALIZE_WHITESPACE
-            [Note(A), Note(A#), Note(B), Note(C), Note(C#), Note(D),
-             Note(D#), Note(E), Note(F), Note(F#), Note(G), Note(G#)]
+            [[Note(A)], [Note(A#)], [Note(B)], [Note(B#), Note(C)], [Note(C#)], [Note(D)],
+             [Note(D#)], [Note(E)], [Note(E#), Note(F)], [Note(F#)], [Note(G)], [Note(G#)]]
         """
-        sharps = []
-        for note in cls.all():
+        ret = []
+        for note, index in cls._chromatic_index_map.items():
             if 'b' not in note:
-                sharps.append(note)
-        return sharps
+                if len(ret) == index:
+                    ret.append([cls(note)])
+                else:
+                    ret[-1].append(cls(note))
+        return ret
 
     @classmethod
     def flats(cls):
-        """ Return a chromatic scale of sharps, starting with A
+        """ Return a chromatic scale of flats, starting with A
 
         .. doctests ::
 
             >>> Note.flats()  # doctest: +NORMALIZE_WHITESPACE
-            [Note(A), Note(Bb), Note(B), Note(C), Note(Db), Note(D),
-             Note(Eb), Note(E), Note(F), Note(Gb), Note(G), Note(Ab)]
+            [[Note(A)], [Note(Bb)], [Note(B), Note(Cb)], [Note(C)], [Note(Db)], [Note(D)],
+             [Note(Eb)], [Note(E), Note(Fb)], [Note(F)], [Note(Gb)], [Note(G)], [Note(Ab)]]
         """
-        flats = []
-        for note in cls.all():
+        ret = []
+        for note, index in cls._chromatic_index_map.items():
             if '#' not in note:
-                flats.append(note)
-        flats.append(flats.pop(0))
-        return flats
+                if len(ret) == index:
+                    ret.append([cls(note)])
+                else:
+                    ret[-1].append(cls(note))
+        return ret
 
     @property
     def lookup_list(self):
@@ -178,16 +192,33 @@ class Note(MusicStr):
         return self.sharps()
 
     @property
-    def lookup_list_index(self):
-        for i in range(len(self.lookup_list)):
-            if self == self.lookup_list[i]:
-                return i
+    def chromatic_index(self):
+        """ Essentially a numeric value for a given note
+
+        .. doctests ::
+
+            >>> Note('C').chromatic_index
+            3
+        """
+        return self._chromatic_index_map[self]
 
     @property
-    def enharmonic_equal(self):
-        if self.sharps()[self.lookup_list_index] == self:
-            return self.flats()[self.lookup_list_index]
-        return self.sharps()[self.lookup_list_index]
+    def enharmonic_equivalent(self):
+        """ Return the Note with the same chromatic_index as the current Note
+
+        .. doctests ::
+
+            >>> Note('A').enharmonic_equivalent  # doctest: +ELLIPSIS
+            Traceback (most recent call last):
+                ...
+            ValueError: Note(A) has no enharmonic equivalent
+            >>> Note('Eb').enharmonic_equivalent
+            Note(D#)
+        """
+        notes = [k for k, v in self._chromatic_index_map.items() if v == self.chromatic_index]
+        if len(notes) == 1:
+            raise ValueError('{} has no enharmonic equivalent'.format(repr(self)))
+        return Note(notes[1]) if notes[0] == self else Note(notes[0])
 
 
 class Chord(object):
@@ -264,10 +295,10 @@ class Interval(object):
         >>> i2 = Interval.from_half_steps(1)
         >>> i1 == i2
         True
-        >>> i3 = Interval(0, 'notreal')  # doctest: +ELLIPSIS
+        >>> i3 = Interval(8, 'notreal')  # doctest: +ELLIPSIS
         Traceback (most recent call last):
             ...
-        ValueError: unsupported interval number: 0
+        ValueError: unsupported interval number: 8
         >>> i3 = Interval(6, 'notreal')  # doctest: +ELLIPSIS
         Traceback (most recent call last):
             ...
@@ -285,7 +316,7 @@ class Interval(object):
         Interval(minor 6)
     """
     _half_step_map = [
-        [('unison', constants.PERFECT)],
+        [(1, constants.PERFECT)],
         [(2, constants.MINOR)],
         [(2, constants.MAJOR)],
         [(3, constants.MINOR)],
@@ -301,7 +332,7 @@ class Interval(object):
 
     def __init__(self, number, modifier):
         number = int(number)
-        if number < 2 or number > 7:
+        if number < 1 or number > 7:
             raise ValueError('unsupported interval number: ' + str(number))
         self.number = number
         supported_modifier = False
@@ -313,15 +344,44 @@ class Interval(object):
         self.modifier = modifier
 
     def __repr__(self):
-        return '{}({} {})'.format(
-            self.__class__.__name__, constants.MODIFIER_DISPLAY[self.modifier]['long'], self.number
-        )
+        if self.number == 1:
+            desc = 'unison'
+        else:
+            desc = ' '.join((
+                constants.MODIFIER_DISPLAY[self.modifier]['long'],
+                str(self.number)
+            ))
+        return '{}({})'.format(self.__class__.__name__, desc)
 
     @classmethod
     def from_half_steps(cls, half_steps):
-        if half_steps < 1 or half_steps > 11:
-            raise ValueError('could not determine interval of {} half steps'.format(half_steps))
+        """ Create an Interval object from a number of half steps (1-11)
+
+        .. doctests ::
+
+            >>> Interval.from_half_steps(5)
+            Interval(perfect 4)
+            >>> Interval.from_half_steps(13)
+            Interval(minor 2)
+        """
+        half_steps = half_steps % 12
         return cls(*cls._half_step_map[half_steps][0])
+
+    @classmethod
+    def from_notes(cls, first, second):
+        """ Create an Interval object representing the distance between two notes
+
+        .. doctests ::
+
+            >>> Interval.from_notes(Note('C'), Note('D'))
+            Interval(major 2)
+            >>> Interval.from_notes(Note('Bb'), Note('Gb'))
+            Interval(minor 6)
+            >>> Interval.from_notes(Note('A'), Note('A'))
+            Interval(unison)
+        """
+        half_steps = (second.chromatic_index - first.chromatic_index) % 12
+        return Interval.from_half_steps(half_steps)
 
     @property
     def half_steps(self):
@@ -481,28 +541,48 @@ class Key(object):
         else:
             self.mode = mode
 
-        self.note_lookup_list = None
-        if self._validate_against_lookup_list(Note.sharps()):
-            self.note_lookup_list = Note.sharps()
-        elif self._validate_against_lookup_list(Note.flats()):
-            self.note_lookup_list = Note.flats()
-        if not self.note_lookup_list:
+        for lookup in (Note.sharps(), Note.flats()):
+            self.note_lookup_list = lookup
+            self.diatonic_notes = self._find_diatonic_notes_in_lookup(lookup)
+            if self.diatonic_notes:
+                break
+        if not self.diatonic_notes:
             raise ValueError('{} is not a realistic key, try rooting at {}'.format(
-                self, self.root.enharmonic_equal
+                self, self.root.enharmonic_equivalent
             ))
 
-    def _validate_against_lookup_list(self, note_lookup_list):
+    def _find_diatonic_notes_in_lookup(self, note_lookup_list):
+        """ Return a flat list of the notes in the key
+
+        .. doctests :::
+
+            >>> Key('C')._find_diatonic_notes_in_lookup(Note.sharps())
+            [Note(C), Note(D), Note(E), Note(F), Note(G), Note(A), Note(B)]
+            >>> Key('C')._find_diatonic_notes_in_lookup(Note.flats())
+            [Note(C), Note(D), Note(E), Note(F), Note(G), Note(A), Note(B)]
+            >>> Key('Gb')._find_diatonic_notes_in_lookup(Note.sharps())
+            >>> Key('Gb')._find_diatonic_notes_in_lookup(Note.flats())
+            [Note(Gb), Note(Ab), Note(Bb), Note(Cb), Note(Db), Note(Eb), Note(F)]
+            >>> Key('C-')._find_diatonic_notes_in_lookup(Note.flats())
+            [Note(C), Note(D), Note(Eb), Note(F), Note(G), Note(Ab), Note(Bb)]
+        """
+        ret = []
         current_note = self.root
-        next_note_i = self.root.lookup_list_index
+        next_note_i = self.root.chromatic_index
         for half_steps in self.mode.half_steps_pattern:
+            ret.append(current_note)
             current_letter_i = string.ascii_uppercase.find(current_note[0])
             next_note_i = (next_note_i + half_steps) % 12
-            next_note = note_lookup_list[next_note_i]
-            next_letter_i = string.ascii_uppercase.find(next_note[0])
-            if next_letter_i - current_letter_i not in (1, -6):
-                return False
+            for next_note in (note_lookup_list[next_note_i]):
+                good_note = False
+                next_letter_i = string.ascii_uppercase.find(next_note[0])
+                if next_letter_i - current_letter_i in (1, -6):
+                    good_note = True
+                    break
+            if not good_note:
+                return None
             current_note = next_note
-        return True
+        return ret
 
     def _stitch_content(self):
         ret = self.root
@@ -525,29 +605,39 @@ class Key(object):
     def relative_major(self):
         if self.mode.ionian_interval is None:
             raise AttributeError('{} does not have a relative major'.format(self))
-        diff = self.mode.ionian_interval - 1
-        half_steps = sum(Mode.Major.half_steps_pattern[:diff])
-        new_root = self.note_lookup_list[(self.root.lookup_list_index - half_steps) % 12]
+        ionian_interval_z = self.mode.ionian_interval - 1
+        new_root = self.diatonic_notes[(0 - ionian_interval_z) % 7]
         return Key(new_root)
 
     @property
     def relative_minor(self):
         if self.mode.ionian_interval is None:
             raise AttributeError('{} does not have a relative minor'.format(self))
-        diff = 1 if self.mode.ionian_interval == 7 else self.mode.ionian_interval + 1
-        half_steps = sum(Mode.Minor.half_steps_pattern[:diff])
-        new_root = self.note_lookup_list[(self.root.lookup_list_index - half_steps) % 12]
-        return Key('{}-'.format(new_root))
+        ionian_interval_z = self.mode.ionian_interval - 1
+        new_root = self.diatonic_notes[(5 - ionian_interval_z) % 7]
+        return Key(new_root, mode=Mode.Aeolian)
 
     @property
     def transposable_roots(self):
+        """ A list of all roots to which this key can reasonably be transposed
+
+        .. doctests ::
+
+            >>> Key('D').transposable_roots  # doctest: +NORMALIZE_WHITESPACE
+            [Note(A), Note(Bb), Note(B), Note(Cb), Note(C), Note(C#), Note(Db), Note(D),
+             Note(Eb), Note(E), Note(F), Note(F#), Note(Gb), Note(G), Note(Ab)]
+            >>> Key('C-').transposable_roots  # doctest: +NORMALIZE_WHITESPACE
+            [Note(A), Note(A#), Note(Bb), Note(B), Note(C), Note(C#), Note(D), Note(D#),
+             Note(Eb), Note(E), Note(F), Note(F#), Note(G), Note(G#), Note(Ab)]
+        """
         ret = []
-        for root in Note.all():
-            try:
-                self.to_root(root)
-                ret.append(root)
-            except ValueError:
-                pass
+        for chromatic_index in range(12):
+            for note in Note.all()[chromatic_index]:
+                try:
+                    self.to_root(note)
+                    ret.append(note)
+                except ValueError:
+                    pass
         return ret
 
 

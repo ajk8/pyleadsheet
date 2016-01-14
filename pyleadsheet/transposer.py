@@ -2,52 +2,6 @@ import copy
 from . import models
 
 
-def _note_interval_to_half_steps(from_note, to_note):
-    """ Return the interval between two notes in half steps
-
-    Note: valid string representations of inputs are also accepted
-
-    .. doctests ::
-
-        >>> _note_interval_to_half_steps(models.Note('C#'), models.Note('G'))
-        6
-        >>> _note_interval_to_half_steps('C#', models.Note('Db'))
-        0
-
-    :param from_note: instance of models.Note
-    :param to_note: instance of models.Note
-    :rtype: int
-    """
-    from_note = models.Note(from_note)
-    to_note = models.Note(to_note)
-    from_i = from_note.lookup_list.index(from_note)
-    to_i = to_note.lookup_list.index(to_note)
-    return (to_i - from_i) % 12
-
-
-def _half_steps_interval_to_note(from_note, half_steps, key):
-    """ Take a note, number of half steps, and key, and calculate the note at that interval
-
-    Note: valid string representations of inputs are also accepted
-
-    .. doctests ::
-
-        >>> _half_steps_interval_to_note('Ab', 4, models.Key('F-'))
-        Note(C)
-        >>> _half_steps_interval_to_note('C', 7, models.Key('F'))
-        Note(G)
-
-    :param from_note: instance of models.Note
-    :param half_steps: number of half steps to the target note
-    :param key: key to calculate the interval in
-    :rtype: models.Note
-    """
-    lookup = key.note_lookup_list
-    from_i = lookup.index(from_note)
-    to_i = (from_i + half_steps) % 12
-    return lookup[to_i]
-
-
 def transpose_chord_by_new_root(chord, from_key, to_root):
     """ Transpose an instance of models.Chord (in place) from one key to another
 
@@ -71,15 +25,20 @@ def transpose_chord_by_new_root(chord, from_key, to_root):
     """
     to_root = models.Note(to_root)
     to_key = from_key.to_root(to_root)
-    half_steps = _note_interval_to_half_steps(from_key.root, to_root)
+    interval = models.Interval.from_notes(from_key.root, to_root)
+    half_steps = interval.half_steps
     for attr_name in 'root', 'base':
         if hasattr(chord, attr_name):
             chord_part = getattr(chord, attr_name)
             if chord_part:
                 chord_part = models.Note(chord_part)
-                from_i = chord_part.lookup_list_index
+                from_i = chord_part.chromatic_index
                 to_i = (from_i + half_steps) % 12
-                setattr(chord, attr_name, to_key.note_lookup_list[to_i])
+                choices = to_key.note_lookup_list[to_i]
+                for choice in choices:
+                    if len(choice) == 1:
+                        break
+                setattr(chord, attr_name, choice)
 
 
 def transpose_chord_by_half_steps(chord, from_key, half_steps):
@@ -99,12 +58,17 @@ def transpose_chord_by_half_steps(chord, from_key, half_steps):
     :param from_key: instance of models.Key
     :param half_steps: interval in half steps
     """
-    to_root = _half_steps_interval_to_note(from_key.root, half_steps, from_key)
-    try:
-        from_key.to_root(to_root)
-    except ValueError:
-        to_root = to_root.enharmonic_equal
-    return transpose_chord_by_new_root(chord, from_key, to_root)
+    to_chromatic_index = (from_key.root.chromatic_index + half_steps) % 12
+    for note in models.Note.all()[to_chromatic_index]:
+        try:
+            from_key.to_root(note)
+            return transpose_chord_by_new_root(chord, from_key, note)
+        except ValueError:
+            pass
+    # should never get here!
+    raise ValueError(
+        'could not transpose {} by {} half steps based on {}'.format(chord, half_steps, from_key)
+    )
 
 
 def _transpose_progression_data_by_new_root(progression_data, from_key, to_root):
