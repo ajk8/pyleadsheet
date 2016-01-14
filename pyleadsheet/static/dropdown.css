@@ -22,10 +22,12 @@
     display: none;
     position: absolute;
     top: 0.3em;
+    padding-top: 0.6em;
     padding-left: 1em;
     padding-right: 1em;
     text-align: center;
     background-color: inherit;
+    opacity: 0.7;
     outline-color: #000;
 }
 
