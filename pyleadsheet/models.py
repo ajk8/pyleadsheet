@@ -641,6 +641,35 @@ class Key(object):
         return ret
 
 
+class Subdivision(object):
+    """ Class representing a subdivision of a measure
+
+    .. doctests ::
+
+        >>> Subdivision()
+        Subdivision(empty)
+        >>> Subdivision(optional=True)
+        Subdivision(empty)
+        >>> Subdivision('x')
+        Subdivision('x')
+        >>> Subdivision(Chord('G'), optional=True)
+        Subdivision(?Chord(G))
+        >>> Subdivision(Chord('A')).content
+        Chord(A)
+    """
+
+    def __init__(self, content=None, optional=False):
+        self.content = content
+        self.optional = optional
+
+    def __repr__(self):
+        return '{}({}{})'.format(
+            self.__class__.__name__,
+            '?' if self.optional and self.content else '',
+            repr(self.content) if self.content else 'empty'
+        )
+
+
 class Measure(object):
     """ Class representing a leadsheet measure
 
@@ -649,22 +678,31 @@ class Measure(object):
         >>> m = Measure(8, Chord('C'))
         >>> m
         Measure(8)
-        >>> m.subdivisions
-        [Chord(C), '', '', '', '', '', '', '']
+        >>> m.subdivisions  # doctest: +NORMALIZE_WHITESPACE
+        [Subdivision(Chord(C)), Subdivision(empty), Subdivision(empty), Subdivision(empty),
+         Subdivision(empty), Subdivision(empty), Subdivision(empty), Subdivision(empty)]
         >>> m.set_next_subdivision(Chord('G'))
         >>> m[1]
-        Chord(G)
+        Subdivision(Chord(G))
         >>> m[4] = Chord('D')
-        >>> m.subdivisions
-        [Chord(C), Chord(G), '', '', Chord(D), '', '', '']
+        >>> m.subdivisions  # doctest: +NORMALIZE_WHITESPACE
+        [Subdivision(Chord(C)), Subdivision(Chord(G)), Subdivision(empty), Subdivision(empty),
+         Subdivision(Chord(D)), Subdivision(empty), Subdivision(empty), Subdivision(empty)]
         >>> del(m[1])
-        >>> m.set_next_subdivision(Chord('G'))
-        >>> m.subdivisions
-        [Chord(C), '', '', '', Chord(D), Chord(G), '', '']
+        >>> m.set_next_subdivision(Chord('G'), optional=True)
+        >>> m.subdivisions  # doctest: +NORMALIZE_WHITESPACE
+        [Subdivision(Chord(C)), Subdivision(empty), Subdivision(empty), Subdivision(empty),
+         Subdivision(Chord(D)), Subdivision(?Chord(G)), Subdivision(empty), Subdivision(empty)]
+        >>> m.subdivisions[5].optional
+        True
+        >>> m[0].optional
+        False
+        >>> m[0].content
+        Chord(C)
         >>> for c in m:
         ...     c
         ...     break
-        Chord(C)
+        Subdivision(Chord(C))
         >>> m[8] = Chord('C')  # doctest: +ELLIPSIS
         Traceback (most recent call last):
             ...
@@ -675,7 +713,7 @@ class Measure(object):
         self.start_bar = self.end_bar = constants.BAR_SINGLE
         self.start_note = self.end_note = ''
         self.args = []
-        self.subdivisions = [''] * length
+        self.subdivisions = [Subdivision()] * length
         self._length = length
         self._last_next_i = 0
         if first_subdivision:
@@ -688,19 +726,23 @@ class Measure(object):
         return self.subdivisions[i]
 
     def __delitem__(self, i):
-        self.subdivisions[i] = ''
+        self.subdivisions[i] = Subdivision()
 
     def _check_for_too_many_subdivisions(self, i):
         if i >= len(self):
             raise IndexError('too many subdivisions ({})'.format(i + 1))
 
-    def __setitem__(self, i, v):
+    def __setitem__(self, i, v, optional=False):
         self._check_for_too_many_subdivisions(i)
+        if type(v) != Subdivision:
+            v = Subdivision(v)
+        if optional:
+            v.optional = True
         self.subdivisions[i] = v
         self._last_next_i = i + 1
 
-    def set_next_subdivision(self, v):
-        self.__setitem__(self._last_next_i, v)
+    def set_next_subdivision(self, v, optional=False):
+        self.__setitem__(self._last_next_i, v, optional=optional)
 
     def __iter__(self):
         for c in self.subdivisions:

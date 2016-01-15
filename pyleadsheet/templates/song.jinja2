@@ -58,7 +58,7 @@
                                         <span class="progression_measure_content subdivisions_{{ num_subdivisions }}">
                                             {% for subdivision in measure.subdivisions %}
                                                 <span class="progression_measure_subdivision">
-                                                    {% if subdivision.optional %}({% endif %}{{ subdivision.root }}<sup>{{ subdivision.spec }}</sup>{% if subdivision.base %}/<sub>{{ subdivision.base }}</sub>{% endif %}{% if subdivision.optional %}){% endif %}
+                                                    {% if subdivision.optional %}({% endif %}{{ subdivision.content.root }}<sup>{{ subdivision.content.spec }}</sup>{% if subdivision.content.base %}/<sub>{{ subdivision.content.base }}</sub>{% endif %}{% if subdivision.optional %}){% endif %}
                                                 </span>
                                             {% endfor %}
                                         </span>

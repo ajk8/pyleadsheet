@@ -205,13 +205,11 @@ def _convert_progression_data(progression_data, multipliers):
                 subdivisions += duration_part.count * multipliers[duration_part.unit]
             for i in range(subdivisions):
                 if cursor % multipliers[constants.DURATION_UNIT_MEASURE] == 0:
-                    measures.append(models.Measure(
-                        multipliers[constants.DURATION_UNIT_MEASURE],
-                        datum['chord']
-                    ))
+                    measures.append(models.Measure(multipliers[constants.DURATION_UNIT_MEASURE]))
+                    measures[-1].set_next_subdivision(datum['chord'], optional=datum['optional'])
                 elif i == 0:
                     _clean_last_chord(measures)
-                    measures[-1].set_next_subdivision(datum['chord'])
+                    measures[-1].set_next_subdivision(datum['chord'], optional=datum['optional'])
                 else:
                     measures[-1].set_next_subdivision('')
                 cursor += 1

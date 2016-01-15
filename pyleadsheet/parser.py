@@ -187,7 +187,8 @@ def _parse_chord(progression_substr):
     tokens = progression_substr[:end_i].split(CHORD_MARKUP['separator'])
     chord_def = {
         'chord': None,
-        'duration': []
+        'duration': [],
+        'optional': False
     }
     chord_content = tokens[0]
     if chord_content == 'rest':
