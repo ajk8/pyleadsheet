@@ -72,40 +72,26 @@ def transpose_chord_by_half_steps(chord, from_key, half_steps):
 
 
 def _transpose_progression_data_by_new_root(progression_data, from_key, to_root):
-    seen_chords = {}
     for datum in progression_data:
         if 'group' in datum.keys():
-            seen_chords.update(
-                _transpose_progression_data_by_new_root(datum['progression'], from_key, to_root)
-            )
+            _transpose_progression_data_by_new_root(datum['progression'], from_key, to_root)
         elif 'chord' in datum.keys():
-            seen_chord_key = copy.copy(datum['chord'])
             transpose_chord_by_new_root(datum['chord'], from_key, to_root)
-            if seen_chord_key not in seen_chords.keys():
-                seen_chords[seen_chord_key] = copy.copy(datum['chord'])
-    return seen_chords
 
 
-def _transpose_nonprogression_data_by_new_root(data, seen_chords):
+def _transpose_nonprogression_data_by_new_root(data, from_key, to_root):
     for key in ['comment']:
         if key in data.keys():
-            # for now just assume that there's only one chord
-            for from_chord, to_chord in seen_chords.items():
-                data[key] = data[key].replace(
-                    models.MusicStr.from_unicode(str(from_chord)),
-                    models.MusicStr.from_unicode(str(to_chord))
-                )
-                break
+            for i in range(len(data[key])):
+                if type(data[key][i]) == models.Chord:
+                    transpose_chord_by_new_root(data[key][i], from_key, to_root)
 
 
 def transpose_song_data_by_new_root(song_data, to_root):
     from_key = copy.deepcopy(song_data['key'])
     song_data['key'] = song_data['key'].to_root(to_root)
-    seen_chords = {}
     for progression_data in song_data['progressions']:
-        seen_chords.update(
-            _transpose_progression_data_by_new_root(progression_data['chords'], from_key, to_root)
-        )
-        _transpose_nonprogression_data_by_new_root(progression_data, seen_chords)
+        _transpose_progression_data_by_new_root(progression_data['chords'], from_key, to_root)
+        _transpose_nonprogression_data_by_new_root(progression_data, from_key, to_root)
     for form_section in song_data['form']:
-        _transpose_nonprogression_data_by_new_root(form_section, seen_chords)
+        _transpose_nonprogression_data_by_new_root(form_section, from_key, to_root)

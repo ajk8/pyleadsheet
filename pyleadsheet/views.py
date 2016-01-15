@@ -309,20 +309,20 @@ def _prepend_global_comments(song_data):
         >>> song_data['progressions'][0]['comment'] = 'global'
         >>> _prepend_global_comments(song_data)
         >>> song_data['form'][0]['comment']
-        'global'
-        >>> song_data['form'][0]['comment'] = 'local'
+        ['global']
+        >>> song_data['form'][0]['comment'] = ['local']
         >>> _prepend_global_comments(song_data)
         >>> song_data['form'][0]['comment']
-        'global -- local'
+        ['global', ' -- ', 'local']
     """
     for progression in song_data['progressions']:
         if 'comment' in progression.keys():
             for section in song_data['form']:
                 if section['progression'] == progression['name']:
                     logger.debug('prepending progression comment')
-                    comment = progression['comment']
+                    comment = [progression['comment']]
                     if 'comment' in section.keys():
-                        comment += ' -- ' + section['comment']
+                        comment += [' -- '] + section['comment']
                     section['comment'] = comment
 
 
@@ -339,17 +339,17 @@ def _prepend_continuation_comments(form_data):
         >>> form_data[-1]['continuation'] = True
         >>> _prepend_continuation_comments(form_data)
         >>> form_data[-1]['comment']
-        'continuation of a'
-        >>> form_data[-1]['comment'] = 'comment'
+        ['continuation of a']
+        >>> form_data[-1]['comment'] = ['comment']
         >>> _prepend_continuation_comments(form_data)
         >>> form_data[-1]['comment']
-        'continuation of a -- comment'
+        ['continuation of a', ' -- ', 'comment']
     """
     for i in range(len(form_data)):
         if 'continuation' in form_data[i].keys():
-            comment = 'continuation of ' + form_data[i-1]['progression']
+            comment = ['continuation of ' + form_data[i-1]['progression']]
             if 'comment' in form_data[i].keys():
-                comment += ' -- ' + form_data[i]['comment']
+                comment += [' -- '] + form_data[i]['comment']
             form_data[i]['comment'] = comment
 
 

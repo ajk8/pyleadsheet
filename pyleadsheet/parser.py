@@ -357,6 +357,46 @@ def _process_progression_chords(song_data):
         progression['chords'] = _parse_progression_str(progression['chords'])
 
 
+def _tokenize_comment_string(comment_string):
+    """ Parse a string for interpretable objects like chords
+
+    .. doctests ::
+
+        >>> _tokenize_comment_string('asdf asdfliuert')
+        ['asdf asdfliuert']
+        >>> _tokenize_comment_string('use [B] for transposing')
+        ['use ', Chord(B), ' for transposing']
+
+    :param comment_string: any string, can contain parseable objects
+    :rtype: list
+    """
+    ret = []
+    i = 0
+    current_token = ''
+    while i < len(comment_string):
+        offset = 0
+        current_char = comment_string[i]
+        if current_char == CHORD_MARKUP['open_char']:
+            ret.append(current_token)
+            current_token = ''
+            chord_def, offset = _parse_chord(comment_string[i+1:])
+            ret.append(chord_def['chord'])
+            i += offset + 1
+        else:
+            current_token += current_char
+        i += 1
+    if current_token:
+        ret.append(current_token)
+    return ret
+
+
+def _process_comments(song_data):
+    for key in ('progressions', 'form'):
+        for data_group in song_data[key]:
+            if 'comment' in data_group.keys():
+                data_group['comment'] = _tokenize_comment_string(data_group['comment'])
+
+
 def _parse_time_signature_string(time_signature_str):
     """ Take in a string representation of a time signature and return an models.TimeSignature
 
@@ -405,6 +445,7 @@ def parse(yaml_str):
     logger.debug('parsing input for song: ' + song_data['title'])
     _validate_schema(song_data)
     _process_progression_chords(song_data)
+    _process_comments(song_data)
     _process_time_signature(song_data)
     _process_key(song_data)
     return song_data

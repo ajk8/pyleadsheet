@@ -83,7 +83,7 @@
                             <tr>
                                 <td class="form_section_name fixed_width">{{ section.progression }}</td>
                                 <td class="form_section_reps">{% if section.reps %}{{ section.reps }}x{% endif %}</td>
-                                <td class="form_section_comment">{% if section.comment %}{{ section.comment }}{% endif %}</td>
+                                <td class="form_section_comment">{% if section.comment %}{{ section.comment|join('') }}{% endif %}</td>
                             </tr>
                         </table>
                         <div class="form_section_lyrics_hint">{{ section.lyrics_hint }}</div>
