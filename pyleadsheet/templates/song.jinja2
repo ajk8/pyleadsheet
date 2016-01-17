@@ -58,8 +58,20 @@
                                         <span class="progression_measure_content subdivisions_{{ num_subdivisions }}">
                                             {% for subdivision in measure.subdivisions %}
                                                 <span class="progression_measure_subdivision">
-                                                    {% if subdivision.optional %}({% endif %}{{ subdivision.content.root }}<sup>{{ subdivision.content.spec }}</sup>{% if subdivision.content.base %}/<sub>{{ subdivision.content.base }}</sub>{% endif %}{% if subdivision.optional %}){% endif %}
-                                                </span>
+                                                    {% if subdivision.content %}
+                                                        <div class="subdivision_content">
+                                                            {% if subdivision.optional %}({% endif %}{{ subdivision.content.root }}<sup>{{ subdivision.content.spec }}</sup>{% if subdivision.content.base %}/<sub>{{ subdivision.content.base }}</sub>{% endif %}{% if subdivision.optional %}){% endif %}
+                                                        </div>
+                                                    {% else %}
+                                                        <div class="back_count">
+                                                            {% if loop.index % 2 %}
+                                                                {{ (loop.index0 // 2) + 1 }}
+                                                            {% else %}
+                                                                &middot;
+                                                            {% endif %}
+                                                        </div>
+                                                    {% endif %}
+                                                    </span>
                                             {% endfor %}
                                         </span>
                                     {% endfor %}

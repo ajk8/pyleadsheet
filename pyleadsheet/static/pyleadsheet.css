@@ -123,12 +123,8 @@ a:active  {
     width: 5em;
 }
 
-.even {
-}
-
-.odd {
-    background-color: #E5F4F6;
-}
+.even { background-color: #FFF; }
+.odd { background-color: #E5F4F6; }
 
 .progression_name {
     float: left;
@@ -195,17 +191,22 @@ a:active  {
 .subdivisions_8 .progression_measure_subdivision { width: 1em; }
 .condensed .subdivisions_8 .progression_measure_subdivision { width: 0.27em; }
 
-.progression_chord_root {
-    float: left;
+.subdivision_content {
+    padding-left: 0.2em;
+    position: relative;
+    z-index: 550;
 }
+/*.even .subdivision_content, .even .subdivision_content sub, .even .subdivions_content super { background-color: #FFF; }
+.odd .subdivision_content, .odd .subdivision_content sub, .odd .subdivions_content super { background-color: #E5F4F6;}*/
 
-.progress_chord_spec {
-    float: left;
+.back_count {
+    padding-left: 0.3em;
+    position: relative;
+    z-index: 540;
+    color: #EEE;
 }
-
-.progression_chort_base {
-    float: left;
-}
+.even .back_count { color: #EEE; }
+.odd .back_count { color: #FAFAFA; }
 
 .form_section {
     width: 32em;
