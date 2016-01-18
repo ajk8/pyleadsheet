@@ -52,7 +52,7 @@ a:active  {
     background-color: #144F43;
     color: #FFF;
     padding-top: 0.5em;
-    padding-left: 0.8em;
+    padding-left: 0.5em;
     padding-right: 0.8em;
     padding-bottom: 0.5em;
 }
@@ -79,9 +79,15 @@ a:active  {
     background-color: inherit;
 }
 
+#header_html_form {
+    margin: 0;
+    background-color: inherit;
+}
+
 .header_link {
     display: inline-block;
     margin-top: 0.6em;
+    margin-left: 0.3em;
 }
 
 .header_label {
@@ -189,15 +195,13 @@ a:active  {
 
 .subdivisions_6 .progression_measure_subdivision { width: 1.425em; }
 .subdivisions_8 .progression_measure_subdivision { width: 1em; }
-.condensed .subdivisions_8 .progression_measure_subdivision { width: 0.27em; }
+.condensed .subdivisions_8 .progression_measure_subdivision { width: 0.32em; }
 
 .subdivision_content {
     padding-left: 0.2em;
     position: relative;
     z-index: 550;
 }
-/*.even .subdivision_content, .even .subdivision_content sub, .even .subdivions_content super { background-color: #FFF; }
-.odd .subdivision_content, .odd .subdivision_content sub, .odd .subdivions_content super { background-color: #E5F4F6;}*/
 
 .back_count {
     padding-left: 0.3em;
@@ -213,9 +217,6 @@ a:active  {
     color: #444;
     padding-left: 0.35em;
     padding-top: 0.4em;
-}
-
-.form_section_progression {
 }
 
 .form_section_reps {

@@ -4,6 +4,7 @@
 
 {% block extrahead %}
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='dropdown.css') }}" />
+    <script type="text/javascript" src="{{ url_for('static', filename='song_header.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -26,22 +27,27 @@
         </div>
         <div class="header_subcontainer">
             {% if render_leadsheet %}
-                <div class="header_link dropdown">
-                    <li>
-                        <a href="#">Transpose</a>
-                        <ul>
-                            {% for root in transpose_roots %}
-                                <li><a href="?transpose_root={{ root }}">{{ root }}</a></li>
-                            {% endfor %}
-                        </ul>
-                    </li>
-                </div>
+                <form id="header_html_form" action="" method="POST">
+                    <input type="hidden" id="header_input_transpose_root" name="transpose_root" value="{% if transpose_root %}{{ transpose_root }}{% endif %}" />
+                    <input type="hidden" id="header_input_condense_measures" name="condense_measures" value={% if condense_measures %}true{% else %}false{% endif %} />
+                    <div class="header_link dropdown">
+                        <li>
+                            <a href="#">Transpose</a>
+                            <ul>
+                                {% for root in transposable_roots %}
+                                    <li><a href="#" onclick="set_header_input_and_submit('header_input_transpose_root', '{{ root }}')">{{ root }}</a></li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    </div>
+                    <div class="header_link"><a href="#" onclick="set_header_input_and_submit('header_input_condense_measures', true)">Condense</a></div>
+                </form>
             {% endif %}
         </div>
     </div>
 
     {% if render_leadsheet %}
-        <div id="progressions_container" class="content_container{% if song.condense_measures %} condensed{% endif %}">
+        <div id="progressions_container" class="content_container{% if condense_measures %} condensed{% endif %}">
             <div id="progressions_title" class="content_container_title">Progressions</div>
             <div id="progressions_content">
                 {% for progression in song.progressions %}
@@ -66,7 +72,7 @@
                                                         <div class="back_count">
                                                             {% if loop.index % 2 %}
                                                                 {{ (loop.index0 // 2) + 1 }}
-                                                            {% else %}
+                                                            {% elif not condense_measures %}
                                                                 &middot;
                                                             {% endif %}
                                                         </div>

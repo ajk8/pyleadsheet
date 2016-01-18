@@ -35,11 +35,14 @@ def _serve_index():
     return render_template('server_index.jinja2', **view_kwargs)
 
 
-@app.route('/song/<shortstr>/<song_view_type>', methods=['GET'])
+@app.route('/song/<shortstr>/<song_view_type>', methods=['GET', 'POST'])
 def _serve_song(shortstr, song_view_type):
     filepath = _shortstr_to_filepath(shortstr)
-    transpose_root = request.args.get('transpose_root', None)
-    view_kwargs = views.compose_song_kwargs(filepath, song_view_type, transpose_root)
+    transpose_root = request.form.get('transpose_root', None)
+    condense_measures = bool(request.form.get('condense_measures', None))
+    view_kwargs = views.compose_song_kwargs(
+        filepath, song_view_type, transpose_root, condense_measures
+    )
     return render_template('song.jinja2', **view_kwargs)
 
 

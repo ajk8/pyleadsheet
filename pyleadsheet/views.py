@@ -124,8 +124,7 @@ def _calculate_max_measures_per_row(condense_measures):
     return max_measures_per_row
 
 
-def _add_max_measures_per_row_to_song_data(song_data):
-    condense_measures = 'condense_measures' in song_data.keys() and song_data['condense_measures']
+def _add_max_measures_per_row_to_song_data(song_data, condense_measures):
     song_data['max_measures_per_row'] = _calculate_max_measures_per_row(condense_measures)
 
 
@@ -351,7 +350,7 @@ def _prepend_continuation_comments(form_data):
             form_data[i]['comment'] = comment
 
 
-def compose_song_kwargs(filepath, song_view_type, transpose_to_root=None):
+def compose_song_kwargs(filepath, song_view_type, transpose_to_root=None, condense_measures=False):
     if not os.path.isfile(filepath):
         raise IOError('input file does not exist: ' + filepath)
     if song_view_type not in SONG_VIEW_TYPES:
@@ -360,7 +359,7 @@ def compose_song_kwargs(filepath, song_view_type, transpose_to_root=None):
     if transpose_to_root:
         transposer.transpose_song_data_by_new_root(song_data, transpose_to_root)
     _add_multipliers_to_song_data(song_data)
-    _add_max_measures_per_row_to_song_data(song_data)
+    _add_max_measures_per_row_to_song_data(song_data, condense_measures)
     for progression in song_data['progressions']:
         progression['rows'] = _make_rows(
             progression['chords'],
@@ -376,5 +375,7 @@ def compose_song_kwargs(filepath, song_view_type, transpose_to_root=None):
         'num_subdivisions': song_data['multipliers'][constants.DURATION_UNIT_MEASURE],
         'render_leadsheet': song_view_type in ('complete', 'leadsheet'),
         'render_lyrics': song_view_type in ('complete', 'lyrics'),
-        'transpose_roots': song_data['key'].transposable_roots
+        'transpose_root': transpose_to_root,
+        'transposable_roots': song_data['key'].transposable_roots,
+        'condense_measures': condense_measures
     })
