@@ -13,6 +13,12 @@
     display: block;
 }
 
+.dropdown li:hover > #header_submenu {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-end;
+}
+
 .dropdown a {
     display: block;
     padding-bottom: 0.3em;
@@ -22,6 +28,7 @@
     display: none;
     position: absolute;
     top: 0.3em;
+    right: 0;
     padding-top: 0.6em;
     padding-left: 1em;
     padding-right: 1em;
@@ -39,4 +46,8 @@
 {
     padding-top: 0.5em;
     padding-bottom: 0.5em;
+}
+
+.dropdown ul ul {
+    margin-top: 1.35em;
 }

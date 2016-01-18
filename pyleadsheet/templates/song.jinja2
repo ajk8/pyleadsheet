@@ -11,7 +11,7 @@
 
     <div id="header_container" class="content_container">
         <div class="header_subcontainer">
-            <div class="header_link"><a href="/">Back to index</a></div>
+            <div class="header_link"><a href="/"><<</a></div>
         </div>
         <div class="header_subcontainer">
             <div class="header_label">Title</div>
@@ -32,15 +32,31 @@
                     <input type="hidden" id="header_input_condense_measures" name="condense_measures" value={% if condense_measures %}true{% else %}false{% endif %} />
                     <div class="header_link dropdown">
                         <li>
-                            <a href="#">Transpose</a>
-                            <ul>
-                                {% for root in transposable_roots %}
-                                    <li><a href="#" onclick="set_header_input_and_submit('header_input_transpose_root', '{{ root }}')">{{ root }}</a></li>
-                                {% endfor %}
+                            <a href="#">:::</a>
+                            <ul id="header_submenu">
+                                <div class="dropdown">
+                                    <li>
+                                        <a href="#">Transpose</a>
+                                        <ul>
+                                            {% for root in transposable_roots %}
+                                                <li><a href="#" onclick="set_header_input_and_submit('header_input_transpose_root', '{{ root }}')">{{ root }}</a></li>
+                                            {% endfor %}
+                                        </ul>
+                                    </li>
+                                </div>
+                                &nbsp;&nbsp;
+                                <div>
+                                    <li>
+                                        {% if condense_measures %}
+                                            <a href="#" onclick="set_header_input_and_submit('header_input_condense_measures', false)">Expand</a>
+                                        {% else %}
+                                            <a href="#" onclick="set_header_input_and_submit('header_input_condense_measures', true)">Condense</a>
+                                        {% endif %}
+                                    </li>
+                                </div>
                             </ul>
                         </li>
                     </div>
-                    <div class="header_link"><a href="#" onclick="set_header_input_and_submit('header_input_condense_measures', true)">Condense</a></div>
                 </form>
             {% endif %}
         </div>

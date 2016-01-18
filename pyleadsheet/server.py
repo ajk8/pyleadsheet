@@ -39,7 +39,7 @@ def _serve_index():
 def _serve_song(shortstr, song_view_type):
     filepath = _shortstr_to_filepath(shortstr)
     transpose_root = request.form.get('transpose_root', None)
-    condense_measures = bool(request.form.get('condense_measures', None))
+    condense_measures = True if request.form.get('condense_measures', None) == 'true' else False
     view_kwargs = views.compose_song_kwargs(
         filepath, song_view_type, transpose_root, condense_measures
     )
