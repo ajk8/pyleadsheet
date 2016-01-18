@@ -8,10 +8,31 @@ app = Flask(__name__)
 
 
 def _filepath_to_shortstr(filepath):
+    """ Take a path and return the filename without any extension
+
+    .. doctests ::
+
+        >>> _filepath_to_shortstr('/path/to/some.file')
+        'some'
+    """
     return '.'.join(os.path.basename(filepath).split('.')[:-1])
 
 
 def _shortstr_to_filepath(from_shortstr):
+    """ Take a filename with no extension, and return the path, which has previously
+        been loaded into app.song_files
+
+    .. doctests ::
+
+        >>> monkeypatch = getfixture('monkeypatch')
+        >>> monkeypatch.setattr(app, 'song_files', ['/path/to/some.file'], raising=False)
+        >>> _shortstr_to_filepath('some')
+        '/path/to/some.file'
+        >>> _shortstr_to_filepath('other')  # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+            ...
+        ValueError: could not convert shortstr to filepath: other
+    """
     for filepath in app.song_files:
         filepath_shortstr = _filepath_to_shortstr(filepath)
         if filepath_shortstr == from_shortstr:
@@ -20,6 +41,13 @@ def _shortstr_to_filepath(from_shortstr):
 
 
 def _get_song_view_url(song_view_type, filepath):
+    """ Generate a URL endpoint for serving a song based the path to a source file
+
+    .. doctests ::
+
+        >>> _get_song_view_url('complete', '/path/to/some.file')
+        '/song/some/complete'
+    """
     shortstr = _filepath_to_shortstr(filepath)
     return '/song/{shortstr}/{song_view_type}'.format(**locals())
 
