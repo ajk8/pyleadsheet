@@ -311,13 +311,20 @@ def _prepend_global_comments(song_data):
         >>> _prepend_global_comments(song_data)
         >>> song_data['form'][0]['comment']
         ['global', ' -- ', 'local']
+        >>> song_data['progressions'][0]['comment'] = ['global']
+        >>> _prepend_global_comments(song_data)
+        >>> song_data['form'][0]['comment']
+        ['global', ' -- ', 'global', ' -- ', 'local']
     """
     for progression in song_data['progressions']:
         if 'comment' in progression.keys():
             for section in song_data['form']:
                 if section['progression'] == progression['name']:
                     logger.debug('prepending progression comment')
-                    comment = [progression['comment']]
+                    if type(progression['comment']) is str:
+                        comment = [progression['comment']]
+                    else:
+                        comment = progression['comment']
                     if 'comment' in section.keys():
                         comment += [' -- '] + section['comment']
                     section['comment'] = comment
